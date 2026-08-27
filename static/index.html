@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-font-size="medium">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AccessLearn AI - Accessible Lecture Platform</title>
+  <meta name="description" content="AI-Powered Educational Accessibility Platform transforming lectures into transcripts, plain-language notes, TTS audio, and Braille BRF files.">
+  
+  <!-- Font Integration -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+  <!-- Keyboard Skip Link -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- Screen Reader Announcer Live Region -->
+  <div id="a11y-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Accessibility Preference Bar -->
+  <aside class="accessibility-bar" aria-label="Accessibility Controls">
+    <div style="font-weight: 700;">
+      <span>♿ AccessLearn Accessibility Menu</span>
+    </div>
+    <div class="a11y-controls">
+      <!-- High Contrast Toggle -->
+      <button id="btn-high-contrast" class="a11y-btn" aria-label="Toggle High Contrast Mode (Shortcut: Alt+T)">
+        ⚡ High Contrast
+      </button>
+
+      <!-- Theme Cycle -->
+      <button id="btn-theme-toggle" class="a11y-btn" aria-label="Cycle Dark and Light Themes">
+        🌙 Dark / Light
+      </button>
+
+      <!-- Font Size Scaling -->
+      <div style="display: flex; align-items: center; gap: 4px;" role="group" aria-label="Text Size Controls">
+        <span style="font-size: 0.85rem; font-weight: 600; margin-right: 4px;">Text Size:</span>
+        <button id="btn-font-small" class="a11y-btn" aria-label="Small font size">A-</button>
+        <button id="btn-font-medium" class="a11y-btn" aria-label="Default font size">A</button>
+        <button id="btn-font-large" class="a11y-btn" aria-label="Large font size">A+</button>
+        <button id="btn-font-xlarge" class="a11y-btn" aria-label="Extra Large font size">A++</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Navigation Header -->
+  <header class="main-header">
+    <a href="#" class="brand-logo" data-target="landing-view" aria-label="AccessLearn AI Homepage">
+      <div class="brand-icon" aria-hidden="true">A</div>
+      <span>AccessLearn <span style="color: var(--primary);">AI</span></span>
+    </a>
+    <nav aria-label="Main Navigation">
+      <ul class="nav-links">
+        <li><a href="#" class="nav-link active" data-target="landing-view">Home</a></li>
+        <li><a href="#" class="nav-link" data-target="dashboard-view">Upload Lecture</a></li>
+        <li><a href="#" class="nav-link" data-target="results-view">Lecture Results</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- Main Content Container -->
+  <main id="main-content" class="container" role="main">
+
+    <!-- ===================================================================
+         VIEW 1: LANDING PAGE
+         =================================================================== -->
+    <section id="landing-view" class="view-section active-view" aria-labelledby="landing-title">
+      <div class="hero-section">
+        <h1 id="landing-title" class="hero-title">Empowering Accessible Learning with Artificial Intelligence</h1>
+        <p class="hero-subtitle">
+          AccessLearn AI automatically transforms standard educational audio and video lectures into accessible formats—including timestamped transcripts, plain-language summaries, text-to-speech audio, and Braille (.BRF) files.
+        </p>
+        <div class="cta-button-group">
+          <button class="btn btn-primary" data-target="dashboard-view">
+            📤 Upload a Lecture Now
+          </button>
+          <button id="btn-demo-quantum" class="btn btn-outline">
+            🚀 Try Quantum Computing Demo
+          </button>
+          <button id="btn-demo-neural" class="btn btn-outline">
+            🧠 Try Neural Networks Demo
+          </button>
+        </div>
+      </div>
+
+      <!-- Feature Cards Grid -->
+      <h2 class="section-heading">Universal Accessibility Formats</h2>
+      <div class="features-grid">
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">📝</div>
+          <h3 class="feature-title">Whisper Transcription</h3>
+          <p class="feature-desc">Accurate timestamped transcripts enabling deaf and hard-of-hearing students to read along and jump to specific timestamps.</p>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">✨</div>
+          <h3 class="feature-title">AI Content Simplification</h3>
+          <p class="feature-desc">Converts complex academic jargon into clear plain-language explanations with helpful real-world analogies.</p>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">🔊</div>
+          <h3 class="feature-title">Text-to-Speech Audio</h3>
+          <p class="feature-desc">Synthesizes lecture notes into playable MP3 audio files with customizable playback speed and seeking controls.</p>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">⠿</div>
+          <h3 class="feature-title">Braille Ready Format (.BRF)</h3>
+          <p class="feature-desc">Translates lecture text into Grade 1 & Grade 2 Braille code formatted for refreshable braille displays and embossers.</p>
+        </article>
+      </div>
+
+      <!-- 4-Step Workflow Section -->
+      <div class="steps-container">
+        <h2 class="section-heading">How AccessLearn AI Works</h2>
+        <div class="steps-grid">
+          <div class="step-card">
+            <div class="step-num">1</div>
+            <h3>Upload Lecture</h3>
+            <p style="color: var(--text-secondary); margin-top: 8px;">Upload MP3, WAV, MP4, or M4A lecture recording.</p>
+          </div>
+          <div class="step-card">
+            <div class="step-num">2</div>
+            <h3>Speech to Text</h3>
+            <p style="color: var(--text-secondary); margin-top: 8px;">Whisper AI generates timestamped transcription.</p>
+          </div>
+          <div class="step-card">
+            <div class="step-num">3</div>
+            <h3>AI Simplification</h3>
+            <p style="color: var(--text-secondary); margin-top: 8px;">NLP models create simplified notes & key points.</p>
+          </div>
+          <div class="step-card">
+            <div class="step-num">4</div>
+            <h3>Multi-Format Output</h3>
+            <p style="color: var(--text-secondary); margin-top: 8px;">Download BRF braille, MP3 audio, and structured text.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         VIEW 2: DASHBOARD & UPLOAD
+         =================================================================== -->
+    <section id="dashboard-view" class="view-section" aria-labelledby="dashboard-title">
+      <h1 id="dashboard-title" class="section-heading">Lecture Upload Dashboard</h1>
+      
+      <form id="upload-lecture-form">
+        <div style="margin-bottom: 20px;">
+          <label for="lecture-title-input" style="display: block; font-weight: 700; margin-bottom: 8px;">Lecture Title (Optional)</label>
+          <input type="text" id="lecture-title-input" class="btn btn-outline" style="width: 100%; text-align: left; padding: 12px;" placeholder="e.g. CS101: Introduction to Data Structures">
+        </div>
+
+        <div id="file-drop-zone" class="upload-card" tabindex="0" aria-label="Upload lecture audio or video file area. Click or drag and drop file here.">
+          <div class="upload-icon" aria-hidden="true">📁</div>
+          <h2>Drag & Drop Audio or Video File Here</h2>
+          <p style="color: var(--text-secondary); margin: 8px 0 16px 0;">Supported formats: MP3, WAV, M4A, OGG, MP4, WebM (Max 500MB)</p>
+          <button type="button" class="btn btn-outline">Browse Files</button>
+          <input type="file" id="lecture-file-input" accept="audio/*,video/*" style="display: none;">
+          <div id="selected-file-info" style="margin-top: 16px; color: var(--primary);"></div>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 40px;">
+          <button type="submit" id="start-upload-btn" class="btn btn-primary" style="font-size: 1.1rem; padding: 14px 36px;">
+            Start AI Accessibility Conversion
+          </button>
+        </div>
+      </form>
+
+      <!-- Recent Lectures Section -->
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 28px;">
+        <h2 style="font-size: 1.4rem; margin-bottom: 16px;">Recent Lectures</h2>
+        <div id="recent-lectures-list">
+          <p style="color: var(--text-muted);">Loading lectures...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         VIEW 3: PROCESSING PIPELINE PAGE
+         =================================================================== -->
+    <section id="processing-view" class="view-section" aria-labelledby="processing-title">
+      <div class="pipeline-container">
+        <h1 id="processing-title" style="text-align: center; margin-bottom: 8px;">Processing Lecture</h1>
+        <p id="processing-lecture-title" style="text-align: center; color: var(--text-secondary); font-size: 1.2rem; margin-bottom: 24px;">Analyzing Audio & Converting Formats</p>
+        
+        <div class="progress-bar-outer">
+          <div id="pipeline-progress-bar" class="progress-bar-inner"></div>
+        </div>
+        
+        <p id="pipeline-stage-text" style="text-align: center; font-weight: 700; color: var(--primary); font-size: 1.1rem;">Initializing AI Pipeline...</p>
+
+        <!-- Pipeline Steps -->
+        <div class="pipeline-steps">
+          <div class="pipeline-step completed">
+            <div class="pipeline-badge">1</div>
+            <strong style="font-size: 0.9rem;">Upload</strong>
+          </div>
+          <div class="pipeline-step">
+            <div class="pipeline-badge">2</div>
+            <strong style="font-size: 0.9rem;">Transcription</strong>
+          </div>
+          <div class="pipeline-step">
+            <div class="pipeline-badge">3</div>
+            <strong style="font-size: 0.9rem;">AI Processing</strong>
+          </div>
+          <div class="pipeline-step">
+            <div class="pipeline-badge">4</div>
+            <strong style="font-size: 0.9rem;">Accessibility</strong>
+          </div>
+          <div class="pipeline-step">
+            <div class="pipeline-badge">5</div>
+            <strong style="font-size: 0.9rem;">Completed</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         VIEW 4: RESULTS PAGE & ACCESSIBLE TABS
+         =================================================================== -->
+    <section id="results-view" class="view-section" aria-labelledby="results-lecture-title">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+        <h1 id="results-lecture-title" style="font-size: 2rem;">Lecture Results</h1>
+        <button class="btn btn-outline" data-target="dashboard-view">
+          ← Back to Upload
+        </button>
+      </div>
+
+      <!-- Accessible Tabs Navigation -->
+      <div class="tabs-header" role="tablist" aria-label="Accessible Format Tabs">
+        <button class="tab-btn active" data-tab="tab-transcript" role="tab" aria-selected="true">📝 Transcript</button>
+        <button class="tab-btn" data-tab="tab-simplified" role="tab" aria-selected="false">✨ Simplified Content</button>
+        <button class="tab-btn" data-tab="tab-summary" role="tab" aria-selected="false">📌 Summary</button>
+        <button class="tab-btn" data-tab="tab-keypoints" role="tab" aria-selected="false">🔑 Key Points</button>
+        <button class="tab-btn" data-tab="tab-audio" role="tab" aria-selected="false">🔊 MP3 Audio</button>
+        <button class="tab-btn" data-tab="tab-braille" role="tab" aria-selected="false">⠿ Braille (.BRF)</button>
+      </div>
+
+      <!-- TAB 1: TRANSCRIPT -->
+      <div id="tab-transcript" class="tab-content active" role="tabpanel">
+        <h2 style="margin-bottom: 16px;">Whisper Lecture Transcript</h2>
+        <div id="transcript-content-box">
+          <p>Loading transcript...</p>
+        </div>
+      </div>
+
+      <!-- TAB 2: SIMPLIFIED CONTENT -->
+      <div id="tab-simplified" class="tab-content" role="tabpanel">
+        <div id="simplified-easy-box" style="margin-bottom: 24px;"></div>
+        <div id="simplified-notes-box"></div>
+      </div>
+
+      <!-- TAB 3: SUMMARY & KEYWORDS -->
+      <div id="tab-summary" class="tab-content" role="tabpanel">
+        <h2 style="margin-bottom: 12px;">Executive Summary</h2>
+        <p id="summary-text-box" style="font-size: 1.15rem; background: var(--bg-primary); padding: 16px; border-radius: var(--radius-sm); margin-bottom: 24px;"></p>
+        <h2 style="margin-bottom: 12px;">Important Keywords & Concepts</h2>
+        <div id="keywords-grid-box" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;"></div>
+      </div>
+
+      <!-- TAB 4: KEY POINTS -->
+      <div id="tab-keypoints" class="tab-content" role="tabpanel">
+        <h2 style="margin-bottom: 16px;">Essential Key Takeaways</h2>
+        <div id="keypoints-list-box"></div>
+      </div>
+
+      <!-- TAB 5: MP3 AUDIO PLAYER -->
+      <div id="tab-audio" class="tab-content" role="tabpanel">
+        <h2 style="margin-bottom: 16px;">Text-to-Speech Lecture Recap</h2>
+        <div class="audio-player-card">
+          <audio id="main-audio-element" style="display: none;"></audio>
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div style="font-weight: 700; font-size: 1.1rem;">Synthesized Speech Audio</div>
+            <button id="audio-download-btn" class="btn btn-outline" style="font-size: 0.9rem;">
+              ⬇ Download MP3 Audio
+            </button>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 12px; margin-top: 16px;">
+            <span id="audio-current-time" style="font-family: var(--font-mono);">00:00</span>
+            <input type="range" id="audio-seek-slider" min="0" max="100" value="0" style="flex: 1; cursor: pointer;" aria-label="Audio playback seek bar">
+            <span id="audio-total-time" style="font-family: var(--font-mono);">00:00</span>
+          </div>
+
+          <div class="audio-controls">
+            <button id="audio-rewind-btn" class="a11y-btn" aria-label="Rewind 10 seconds">⏪ -10s</button>
+            <button id="audio-play-btn" class="player-btn" aria-label="Play or Pause Audio">▶</button>
+            <button id="audio-forward-btn" class="a11y-btn" aria-label="Forward 10 seconds">+10s ⏩</button>
+            
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
+              <label for="audio-speed-select" style="font-size: 0.9rem; font-weight: 600;">Speed:</label>
+              <select id="audio-speed-select" class="a11y-btn">
+                <option value="0.75">0.75x</option>
+                <option value="1.0" selected>1.0x (Normal)</option>
+                <option value="1.25">1.25x</option>
+                <option value="1.5">1.5x</option>
+                <option value="2.0">2.0x</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 6: BRAILLE BRF VIEWER -->
+      <div id="tab-braille" class="tab-content" role="tabpanel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+          <h2>Braille Ready Format (.BRF)</h2>
+          <div style="display: flex; gap: 8px;">
+            <button id="braille-mode-toggle" class="btn btn-outline" style="font-size: 0.9rem;">
+              Switch to ASCII BRF
+            </button>
+            <button id="braille-copy-btn" class="btn btn-outline" style="font-size: 0.9rem;">
+              Copy Braille
+            </button>
+            <button id="braille-download-btn" class="btn btn-primary" style="font-size: 0.9rem;">
+              ⬇ Download .BRF File
+            </button>
+          </div>
+        </div>
+
+        <div id="braille-stats-info" style="margin-bottom: 12px; font-weight: 600; color: var(--text-secondary);">
+          Formatted 40-cell grid | Standard Grade 2 BRF
+        </div>
+
+        <div id="braille-display-box" class="braille-container" aria-label="Braille content preview">
+          Loading Braille code...
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="main-footer">
+    <p>AccessLearn AI &copy; 2026 — AI Accessibility Platform for Educational Lectures. Built for WCAG 2.1 AA Compliance.</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="/static/js/network_bg.js"></script>
+  <script src="/static/js/accessibility.js"></script>
+  <script src="/static/js/audio_player.js"></script>
+  <script src="/static/js/braille_viewer.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
