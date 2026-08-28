@@ -93,11 +93,11 @@ class EnhancedNeuralNetworkBackground {
     let nodeCount = Math.floor(area / 16000);
     
     if (this.width < 768) {
-      nodeCount = Math.min(nodeCount, 30);
-    } else if (this.width < 1200) {
       nodeCount = Math.min(nodeCount, 55);
+    } else if (this.width < 1200) {
+      nodeCount = Math.min(nodeCount, 90);
     } else {
-      nodeCount = Math.min(nodeCount, 85);
+      nodeCount = Math.min(nodeCount, 140);
     }
 
     this.createNodes(nodeCount);
@@ -110,9 +110,10 @@ class EnhancedNeuralNetworkBackground {
   createNodes(count) {
     this.nodes = [];
     for (let i = 0; i < count; i++) {
-      // 75% edge biased to leave center content ultra-clean
+      // Panels are near-fully-transparent glass now, so nodes are placed
+      // uniformly across the whole viewport rather than biased to the edges.
       let x, y;
-      if (Math.random() < 0.75) {
+      if (Math.random() < 0.1) {
         if (Math.random() < 0.5) {
           x = Math.random() < 0.5 ? Math.random() * (this.width * 0.28) : this.width * 0.72 + Math.random() * (this.width * 0.28);
           y = Math.random() * this.height;
@@ -137,7 +138,7 @@ class EnhancedNeuralNetworkBackground {
         vy: (Math.random() - 0.5) * 0.4 * z,
         radius: (Math.random() * 1.5 + 1.2) * z,
         color: color,
-        baseAlpha: (Math.random() * 0.3 + 0.2) * z,
+        baseAlpha: (Math.random() * 0.35 + 0.3) * z,
         pulsePhase: Math.random() * Math.PI * 2,
         pulseSpeed: Math.random() * 0.02 + 0.005
       });
@@ -181,7 +182,7 @@ class EnhancedNeuralNetworkBackground {
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist < this.maxDistance) {
-          const lineAlpha = (1 - dist / this.maxDistance) * 0.25 * ((nodeA.z + nodeB.z) / 2);
+          const lineAlpha = (1 - dist / this.maxDistance) * 0.45 * ((nodeA.z + nodeB.z) / 2);
           
           const grad = this.ctx.createLinearGradient(nodeA.x, nodeA.y, nodeB.x, nodeB.y);
           grad.addColorStop(0, `rgba(${nodeA.color.r}, ${nodeA.color.g}, ${nodeA.color.b}, ${lineAlpha})`);
@@ -201,10 +202,10 @@ class EnhancedNeuralNetworkBackground {
     for (let node of this.nodes) {
       const { r, g, b } = node.color;
       const currentAlpha = node.baseAlpha + Math.sin(node.pulsePhase) * 0.15;
-      const alpha = Math.max(0.08, Math.min(0.65, currentAlpha));
+      const alpha = Math.max(0.15, Math.min(0.85, currentAlpha));
 
       // Outer soft glow halo
-      const glowRadius = node.radius * 3.2;
+      const glowRadius = node.radius * 4.2;
       const gradient = this.ctx.createRadialGradient(
         node.x, node.y, 0,
         node.x, node.y, glowRadius

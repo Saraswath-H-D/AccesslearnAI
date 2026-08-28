@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     UPLOAD_DIR: Path = BASE_DIR / "storage" / "uploads"
     OUTPUT_DIR: Path = BASE_DIR / "storage" / "outputs"
     DEMO_DIR: Path = BASE_DIR / "demo_data"
+    LECTURES_DB_FILE: Path = BASE_DIR / "storage" / "lectures_db.json"
     
     class Config:
         env_file = ".env"

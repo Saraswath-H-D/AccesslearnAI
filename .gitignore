@@ -41,6 +41,9 @@ storage/uploads/*
 storage/outputs/*
 !storage/outputs/.gitkeep
 
+# Persisted lecture database (per-machine user data, not source)
+storage/lectures_db.json
+
 # IDEs
 .vscode/
 .idea/

@@ -57,28 +57,21 @@ class AccessibilityEngine {
   }
 
   setupEventListeners() {
-    // High contrast toggle button
-    const contrastBtn = document.getElementById('btn-high-contrast');
-    if (contrastBtn) {
-      contrastBtn.addEventListener('click', () => this.toggleHighContrast());
-    }
+    // Quick sidebar controls + Preferences drawer controls share behavior;
+    // wire every matching pair of IDs so both surfaces stay in sync.
+    const wireAll = (ids, handler) => {
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('click', handler);
+      });
+    };
 
-    // Theme cycle button
-    const themeBtn = document.getElementById('btn-theme-toggle');
-    if (themeBtn) {
-      themeBtn.addEventListener('click', () => this.toggleTheme());
-    }
-
-    // Font size controls
-    const fontSmall = document.getElementById('btn-font-small');
-    const fontMedium = document.getElementById('btn-font-medium');
-    const fontLarge = document.getElementById('btn-font-large');
-    const fontXLarge = document.getElementById('btn-font-xlarge');
-
-    if (fontSmall) fontSmall.addEventListener('click', () => this.applyFontSize('small'));
-    if (fontMedium) fontMedium.addEventListener('click', () => this.applyFontSize('medium'));
-    if (fontLarge) fontLarge.addEventListener('click', () => this.applyFontSize('large'));
-    if (fontXLarge) fontXLarge.addEventListener('click', () => this.applyFontSize('xlarge'));
+    wireAll(['btn-high-contrast', 'pref-btn-high-contrast'], () => this.toggleHighContrast());
+    wireAll(['btn-theme-toggle', 'pref-btn-theme-toggle'], () => this.toggleTheme());
+    wireAll(['btn-font-small', 'pref-btn-font-small'], () => this.applyFontSize('small'));
+    wireAll(['btn-font-medium', 'pref-btn-font-medium'], () => this.applyFontSize('medium'));
+    wireAll(['btn-font-large', 'pref-btn-font-large'], () => this.applyFontSize('large'));
+    wireAll(['btn-font-xlarge', 'pref-btn-font-xlarge'], () => this.applyFontSize('xlarge'));
   }
 
   setupKeyboardShortcuts() {
@@ -91,16 +84,13 @@ class AccessibilityEngine {
             this.toggleHighContrast();
             break;
           case 'u':
-            e.preventDefault();
-            if (window.appRouter) window.appRouter.showView('dashboard-view');
-            break;
           case 'd':
             e.preventDefault();
-            if (window.appRouter) window.appRouter.showView('dashboard-view');
+            if (window.appRouter) window.appRouter.openUploadModal();
             break;
           case 'h':
             e.preventDefault();
-            if (window.appRouter) window.appRouter.showView('landing-view');
+            if (window.appRouter) window.appRouter.showEmptyState();
             break;
         }
       }

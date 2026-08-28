@@ -1,5 +1,6 @@
 import time
 import uuid
+import json
 import logging
 from typing import Dict, Any
 from pathlib import Path
@@ -28,8 +29,66 @@ celery_app.conf.update(
     enable_utc=True,
 )
 
-# In-memory lecture store for status tracking and instant status polling
+# Lecture store for status tracking and instant status polling.
+# Backed by a local JSON file so lectures survive server restarts without
+# requiring any external database service to be installed or running.
 LECTURE_STORE: Dict[str, Dict[str, Any]] = {}
+
+
+def _load_store_from_disk():
+    """Loads previously persisted lectures from storage/lectures_db.json, if present."""
+    try:
+        if settings.LECTURES_DB_FILE.exists():
+            with open(settings.LECTURES_DB_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                LECTURE_STORE.update(data)
+                logger.info(f"Loaded {len(data)} persisted lecture(s) from {settings.LECTURES_DB_FILE}")
+    except Exception as e:
+        logger.warning(f"Could not load persisted lecture store: {e}")
+
+
+def _persist_store_to_disk():
+    """Writes the current in-memory lecture store to disk as JSON."""
+    try:
+        settings.LECTURES_DB_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(settings.LECTURES_DB_FILE, "w", encoding="utf-8") as f:
+            json.dump(LECTURE_STORE, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logger.warning(f"Could not persist lecture store to disk: {e}")
+
+
+_load_store_from_disk()
+
+
+def save_lecture_store():
+    """Public hook for other modules (e.g. the API router) to persist after mutating LECTURE_STORE directly."""
+    _persist_store_to_disk()
+
+
+def delete_lecture_record(lecture_id: str) -> bool:
+    """Removes a lecture from the store (and its generated files) permanently."""
+    if lecture_id not in LECTURE_STORE:
+        return False
+
+    rec = LECTURE_STORE.pop(lecture_id)
+
+    # Best-effort cleanup of files on disk; missing files are not an error.
+    candidate_paths = [
+        settings.UPLOAD_DIR / rec.get("filename", ""),
+        settings.OUTPUT_DIR / f"{lecture_id}_summary.mp3",
+        settings.OUTPUT_DIR / f"{lecture_id}.brf",
+    ]
+    for path in candidate_paths:
+        try:
+            if path.name and path.exists():
+                path.unlink()
+        except Exception as e:
+            logger.warning(f"Could not delete file {path}: {e}")
+
+    _persist_store_to_disk()
+    return True
+
 
 def create_lecture_record(lecture_id: str, title: str, filename: str) -> Dict[str, Any]:
     record = {
@@ -51,6 +110,7 @@ def create_lecture_record(lecture_id: str, title: str, filename: str) -> Dict[st
         "data": {}
     }
     LECTURE_STORE[lecture_id] = record
+    _persist_store_to_disk()
     return record
 
 def update_lecture_stage(lecture_id: str, stage_idx: int, stage_name: str, progress: int):
@@ -65,6 +125,7 @@ def update_lecture_stage(lecture_id: str, stage_idx: int, stage_name: str, progr
                 stg["status"] = "in_progress"
             else:
                 stg["status"] = "pending"
+        _persist_store_to_disk()
 
 def complete_lecture_record(lecture_id: str, data: Dict[str, Any]):
     if lecture_id in LECTURE_STORE:
@@ -75,6 +136,7 @@ def complete_lecture_record(lecture_id: str, data: Dict[str, Any]):
         for stg in rec["stages"]:
             stg["status"] = "completed"
         rec["data"] = data
+        _persist_store_to_disk()
 
 def process_lecture_pipeline_core(lecture_id: str, file_path_str: str, lecture_title: str) -> Dict[str, Any]:
     """
