@@ -525,6 +525,28 @@ body {
   display: none;
 }
 
+/* Related Visuals in Simplified Notes */
+.note-image-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+}
+.note-image-card img {
+  width: 100%;
+  height: 130px;
+  object-fit: cover;
+  display: block;
+}
+.note-image-caption {
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
 /* Pipeline Progress Component */
 .pipeline-container {
   background: var(--bg-surface);

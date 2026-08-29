@@ -10,6 +10,7 @@ from app.services.whisper_service import whisper_service
 from app.services.nlp_service import nlp_service
 from app.services.tts_service import tts_service
 from app.services.braille_service import braille_service
+from app.services.image_service import image_service
 
 logger = logging.getLogger(__name__)
 
@@ -93,11 +94,33 @@ def process_lecture_pipeline_core(lecture_id: str, file_path_str: str, lecture_t
     time.sleep(1.0)
     
     nlp_res = nlp_service.process_transcript(transcript_res["full_text"], lecture_title)
-    
+
+    # Related illustrative images for the simplified notes, sourced from the
+    # lecture title plus its top keywords -- makes the notes (and the PDF
+    # export) easier to follow at a glance. Falls back to generated
+    # placeholder graphics automatically if offline or nothing is found.
+    image_topics = [lecture_title] + [kw.get("term", "") for kw in nlp_res.get("keywords", [])]
+    image_dir = settings.OUTPUT_DIR / "images" / lecture_id
+    try:
+        images_meta = image_service.fetch_topic_images(image_topics, image_dir, max_images=4)
+    except Exception as e:
+        logger.warning(f"Related image fetch failed for lecture {lecture_id}: {e}")
+        images_meta = []
+
+    notes_images = [
+        {
+            "url": f"/api/notes/image/{lecture_id}/{img['filename']}",
+            "local_path": img["path"],
+            "caption": img["caption"],
+            "source": img["source"],
+        }
+        for img in images_meta
+    ]
+
     # Stage 3: Accessibility Conversions (TTS Audio & Braille BRF)
     update_lecture_stage(lecture_id, 3, "Synthesizing MP3 Audio & Braille BRF...", 85)
     time.sleep(1.0)
-    
+
     # Synthesize Audio
     mp3_filename = f"{lecture_id}_summary.mp3"
     mp3_path = settings.OUTPUT_DIR / mp3_filename
@@ -118,7 +141,8 @@ def process_lecture_pipeline_core(lecture_id: str, file_path_str: str, lecture_t
         "simplified": {
             "simplified_content": nlp_res.get("simplified_content", ""),
             "easy_explanation": nlp_res.get("easy_explanation", ""),
-            "study_notes": nlp_res.get("study_notes", [])
+            "study_notes": nlp_res.get("study_notes", []),
+            "images": notes_images
         },
         "summary": {
             "short_summary": nlp_res.get("short_summary", ""),

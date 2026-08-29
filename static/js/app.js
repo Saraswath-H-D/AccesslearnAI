@@ -342,6 +342,14 @@ class AccessLearnApp {
       // 2. Render Simplified Content
       this.renderSimplified(data.simplified || {});
 
+      // 2b. Wire up the PDF notes download button
+      const pdfBtn = document.getElementById('notes-pdf-download-btn');
+      if (pdfBtn) {
+        pdfBtn.onclick = () => {
+          window.location.href = `/api/notes/pdf/${lectureId}`;
+        };
+      }
+
       // 3. Render Summary & Keywords
       this.renderSummary(data.summary || {});
 
@@ -398,6 +406,25 @@ class AccessLearnApp {
   renderSimplified(simplifiedData) {
     const easyBox = document.getElementById('simplified-easy-box');
     const notesBox = document.getElementById('simplified-notes-box');
+    const imagesBox = document.getElementById('simplified-images-box');
+
+    if (imagesBox) {
+      const images = simplifiedData.images || [];
+      if (images.length === 0) {
+        imagesBox.innerHTML = '';
+      } else {
+        let imgHtml = '';
+        images.forEach(img => {
+          imgHtml += `
+            <div class="note-image-card">
+              <img src="${img.url}" alt="Illustration related to: ${img.caption}" loading="lazy">
+              <div class="note-image-caption">${img.caption}</div>
+            </div>
+          `;
+        });
+        imagesBox.innerHTML = imgHtml;
+      }
+    }
 
     if (easyBox) {
       easyBox.innerHTML = `

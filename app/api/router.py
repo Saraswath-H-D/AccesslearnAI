@@ -5,12 +5,13 @@ import logging
 from pathlib import Path
 from typing import Optional
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel
 
 from app.config import settings
 from app.utils.audio_utils import AudioUtils
 from app.services.youtube_service import youtube_service
+from app.services.pdf_service import notes_pdf_service
 from app.tasks.celery_tasks import (
     LECTURE_STORE,
     create_lecture_record,
@@ -261,6 +262,50 @@ async def get_simplified(lecture_id: str):
     if rec["status"] != "completed":
         raise HTTPException(status_code=400, detail="Lecture processing is not completed yet.")
     return rec["data"].get("simplified", {})
+
+@router.get("/notes/image/{lecture_id}/{filename}")
+async def get_notes_image(lecture_id: str, filename: str):
+    """
+    Serves a related illustrative image attached to a lecture's simplified
+    notes (fetched from Wikimedia Commons, or a generated placeholder).
+    """
+    if "/" in filename or "\\" in filename or ".." in filename:
+        raise HTTPException(status_code=400, detail="Invalid image filename.")
+    image_path = settings.OUTPUT_DIR / "images" / lecture_id / filename
+    if not image_path.exists():
+        raise HTTPException(status_code=404, detail="Image not found.")
+    return FileResponse(path=image_path, media_type="image/jpeg")
+
+@router.get("/notes/pdf/{lecture_id}")
+async def download_notes_pdf(lecture_id: str):
+    """
+    Generates and downloads a PDF of the lecture's simplified study notes,
+    including related illustrative images, for offline studying.
+    """
+    if lecture_id not in LECTURE_STORE:
+        raise HTTPException(status_code=404, detail="Lecture ID not found.")
+    rec = LECTURE_STORE[lecture_id]
+    if rec["status"] != "completed":
+        raise HTTPException(status_code=400, detail="Lecture processing is not completed yet.")
+
+    data = rec["data"]
+    try:
+        pdf_bytes = notes_pdf_service.build_pdf(
+            lecture_title=rec["title"],
+            simplified=data.get("simplified", {}),
+            summary=data.get("summary", {}),
+            key_points=data.get("key_points", [])
+        )
+    except Exception as e:
+        logger.error(f"PDF generation failed for lecture {lecture_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate PDF notes.")
+
+    filename = f"AccessLearn_{lecture_id}_Notes.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
 
 @router.get("/audio/{lecture_id}")
 async def get_audio(lecture_id: str, download: bool = False):
