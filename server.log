@@ -1,45 +1,64 @@
 INFO:     Will watch for changes in these directories: ['D:\\accesslearn\\AccesslearnAI']
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [34460] using WatchFiles
-INFO:     Started server process [31708]
+INFO:     Started reloader process [29592] using WatchFiles
+INFO:     Started server process [29024]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-2026-08-29 23:49:32,962 - app.tasks.celery_tasks - INFO - Pipeline started for lecture demo-quantum-101: Introduction to Quantum Computing
-2026-08-29 23:49:33,966 - app.services.whisper_service - INFO - Starting transcription for D:\accesslearn\AccesslearnAI\storage\uploads\demo1.mp3
-2026-08-29 23:49:41,498 - app.services.image_service - WARNING - Failed to download related image from https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Superposition_%28Stranduferwellen%29.jpg/960px-Superposition_%28Stranduferwellen%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail: 429 Client Error: Too Many Requests (015d12c) for url: https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Superposition_%28Stranduferwellen%29.jpg/960px-Superposition_%28Stranduferwellen%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail
-2026-08-29 23:49:43,101 - app.services.image_service - WARNING - Failed to download related image from https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Quantum_Entanglement_Experiment_via_Spontaneous_Parametric_Down-Conversion_%28SPDC%29.jpg/960px-Quantum_Entanglement_Experiment_via_Spontaneous_Parametric_Down-Conversion_%28SPDC%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail: 429 Client Error: Too Many Requests (015d12c) for url: https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Quantum_Entanglement_Experiment_via_Spontaneous_Parametric_Down-Conversion_%28SPDC%29.jpg/960px-Quantum_Entanglement_Experiment_via_Spontaneous_Parametric_Down-Conversion_%28SPDC%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail
-2026-08-29 23:49:44,124 - app.services.tts_service - INFO - Generating TTS audio at D:\accesslearn\AccesslearnAI\storage\outputs\demo-quantum-101_summary.mp3
-2026-08-29 23:49:50,209 - app.tasks.celery_tasks - INFO - Pipeline finished successfully for lecture demo-quantum-101
-2026-08-29 23:49:50,209 - app.tasks.celery_tasks - INFO - Pipeline started for lecture demo-neural-net-201: Neural Networks & Deep Learning
-2026-08-29 23:49:51,217 - app.services.whisper_service - INFO - Starting transcription for D:\accesslearn\AccesslearnAI\storage\uploads\demo2.mp4
-2026-08-29 23:50:00,910 - app.services.image_service - WARNING - Failed to download related image from https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/BP_parliament_at_night_B%C3%85n.JPG/960px-BP_parliament_at_night_B%C3%85n.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail: 429 Client Error: Too Many Requests (015d12c) for url: https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/BP_parliament_at_night_B%C3%85n.JPG/960px-BP_parliament_at_night_B%C3%85n.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail
-2026-08-29 23:50:02,448 - app.services.image_service - WARNING - Failed to download related image from https://upload.wikimedia.org/wikipedia/commons/d/d1/Gradient_descent_maximum_likelihood.gif?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled: 429 Client Error: Too Many Requests (015d12c) for url: https://upload.wikimedia.org/wikipedia/commons/d/d1/Gradient_descent_maximum_likelihood.gif?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled
-2026-08-29 23:50:03,493 - app.services.tts_service - INFO - Generating TTS audio at D:\accesslearn\AccesslearnAI\storage\outputs\demo-neural-net-201_summary.mp3
-2026-08-29 23:50:10,223 - app.tasks.celery_tasks - INFO - Pipeline finished successfully for lecture demo-neural-net-201
-INFO:     127.0.0.1:54521 - "GET /api/lectures HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51741 - "GET /api/simplified/demo-quantum-101 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51742 - "GET /api/notes/image/demo-quantum-101/img_0.jpg HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51743 - "GET /api/notes/image/demo-quantum-101/img_2.jpg HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51744 - "GET /api/notes/image/demo-quantum-101/../../config.py HTTP/1.1" 404 Not Found
-INFO:     127.0.0.1:51745 - "GET /api/notes/image/demo-quantum-101/img_0.jpg HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51746 - "GET /api/notes/pdf/demo-quantum-101 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51748 - "GET /api/notes/pdf/doesnotexist HTTP/1.1" 404 Not Found
-INFO:     127.0.0.1:51749 - "GET /health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65466 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65466 - "GET /static/css/styles.css HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59230 - "GET /static/js/accessibility.js HTTP/1.1" 304 Not Modified
-INFO:     127.0.0.1:60123 - "GET /static/js/app.js HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65206 - "GET /static/js/audio_player.js HTTP/1.1" 304 Not Modified
-INFO:     127.0.0.1:63777 - "GET /static/js/braille_viewer.js HTTP/1.1" 304 Not Modified
-INFO:     127.0.0.1:54363 - "GET /static/js/network_bg.js HTTP/1.1" 304 Not Modified
-INFO:     127.0.0.1:60123 - "GET /api/lectures HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60123 - "POST /api/demo/load/quantum HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60123 - "GET /api/status/demo-quantum-101 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60123 - "GET /api/lectures HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65466 - "GET /api/audio/demo-quantum-101 HTTP/1.1" 206 Partial Content
-INFO:     127.0.0.1:60123 - "GET /api/audio/demo-quantum-101 HTTP/1.1" 206 Partial Content
-INFO:     127.0.0.1:51971 - "GET /api/notes/image/demo-quantum-101/img_0.jpg HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57049 - "GET /api/notes/image/demo-quantum-101/img_1.jpg HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56418 - "GET /api/notes/image/demo-quantum-101/img_3.jpg HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54050 - "GET /api/notes/image/demo-quantum-101/img_2.jpg HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59542 - "GET /api/notes/pdf/demo-quantum-101 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57200 - "POST /api/upload HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57202 - "POST /api/process/lec-07737ea8 HTTP/1.1" 200 OK
+2026-08-30 00:06:31,629 - app.tasks.celery_tasks - INFO - Pipeline started for lecture lec-07737ea8: Delete Test Lecture
+2026-08-30 00:06:32,635 - app.services.whisper_service - INFO - Starting transcription for D:\accesslearn\AccesslearnAI\storage\uploads\lec-07737ea8.wav
+INFO:     127.0.0.1:62341 - "GET /api/status/lec-07737ea8 HTTP/1.1" 200 OK
+2026-08-30 00:06:43,557 - app.services.image_service - WARNING - Failed to download related image from https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Synthesis_of_MnCl3%28OPPh3%292.png/960px-Synthesis_of_MnCl3%28OPPh3%292.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail: 429 Client Error: Too many requests (f061ab2) for url: https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Synthesis_of_MnCl3%28OPPh3%292.png/960px-Synthesis_of_MnCl3%28OPPh3%292.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail
+2026-08-30 00:06:44,596 - app.services.tts_service - INFO - Generating TTS audio at D:\accesslearn\AccesslearnAI\storage\outputs\lec-07737ea8_summary.mp3
+INFO:     127.0.0.1:62350 - "GET /api/status/lec-07737ea8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62354 - "GET /api/status/lec-07737ea8 HTTP/1.1" 200 OK
+2026-08-30 00:06:51,102 - app.tasks.celery_tasks - INFO - Pipeline finished successfully for lecture lec-07737ea8
+INFO:     127.0.0.1:62358 - "GET /api/status/lec-07737ea8 HTTP/1.1" 200 OK
+2026-08-30 00:07:01,245 - app.api.router - INFO - Deleted lecture lec-07737ea8 and 4 associated file(s).
+INFO:     127.0.0.1:62359 - "DELETE /api/lectures/lec-07737ea8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62360 - "GET /api/status/lec-07737ea8 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:62362 - "DELETE /api/lectures/does-not-exist HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:62363 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61282 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61282 - "GET /static/css/styles.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:61574 - "GET /static/js/network_bg.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:59531 - "GET /static/js/accessibility.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:53450 - "GET /static/js/braille_viewer.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:61088 - "GET /static/js/audio_player.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:54425 - "GET /static/js/app.js HTTP/1.1" 200 OK
+2026-08-30 00:08:02,081 - app.tasks.celery_tasks - INFO - Pipeline started for lecture demo-quantum-101: Introduction to Quantum Computing
+2026-08-30 00:08:03,096 - app.services.whisper_service - INFO - Starting transcription for D:\accesslearn\AccesslearnAI\storage\uploads\demo1.mp3
+2026-08-30 00:08:23,119 - app.services.tts_service - INFO - Generating TTS audio at D:\accesslearn\AccesslearnAI\storage\outputs\demo-quantum-101_summary.mp3
+2026-08-30 00:08:31,297 - app.tasks.celery_tasks - INFO - Pipeline finished successfully for lecture demo-quantum-101
+2026-08-30 00:08:31,298 - app.tasks.celery_tasks - INFO - Pipeline started for lecture demo-neural-net-201: Neural Networks & Deep Learning
+2026-08-30 00:08:32,310 - app.services.whisper_service - INFO - Starting transcription for D:\accesslearn\AccesslearnAI\storage\uploads\demo2.mp4
+2026-08-30 00:08:44,901 - app.services.image_service - WARNING - Failed to download related image from https://upload.wikimedia.org/wikipedia/commons/d/d1/Gradient_descent_maximum_likelihood.gif?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled: 429 Client Error: Too many requests (f061ab2) for url: https://upload.wikimedia.org/wikipedia/commons/d/d1/Gradient_descent_maximum_likelihood.gif?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled
+2026-08-30 00:08:45,955 - app.services.tts_service - INFO - Generating TTS audio at D:\accesslearn\AccesslearnAI\storage\outputs\demo-neural-net-201_summary.mp3
+2026-08-30 00:08:53,742 - app.tasks.celery_tasks - INFO - Pipeline finished successfully for lecture demo-neural-net-201
+INFO:     127.0.0.1:54425 - "GET /api/lectures HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59531 - "POST /api/demo/load/neural HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53450 - "POST /api/demo/load/neural HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61088 - "POST /api/demo/load/quantum HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61282 - "POST /api/demo/load/neural HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61574 - "POST /api/demo/load/neural HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61088 - "POST /api/demo/load/neural HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59531 - "POST /api/demo/load/neural HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53450 - "POST /api/demo/load/neural HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61282 - "POST /api/demo/load/quantum HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54425 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59531 - "POST /api/demo/load/quantum HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61088 - "POST /api/demo/load/quantum HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61574 - "POST /api/demo/load/quantum HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61282 - "GET /api/status/demo-neural-net-201 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53450 - "POST /api/demo/load/quantum HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59531 - "GET /api/status/demo-quantum-101 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61574 - "GET /api/status/demo-neural-net-201 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61282 - "GET /api/status/demo-quantum-101 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53450 - "GET /api/status/demo-neural-net-201 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54425 - "GET /static/js/app.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:54425 - "GET /api/lectures HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54425 - "POST /api/demo/load/quantum HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54425 - "GET /api/status/demo-quantum-101 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54425 - "GET /api/lectures HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61088 - "GET /api/audio/demo-quantum-101 HTTP/1.1" 206 Partial Content

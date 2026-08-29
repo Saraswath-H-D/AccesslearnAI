@@ -350,6 +350,12 @@ class AccessLearnApp {
         };
       }
 
+      // 2c. Wire up the delete button for this lecture
+      const deleteBtn = document.getElementById('results-delete-btn');
+      if (deleteBtn) {
+        deleteBtn.onclick = () => this.deleteLecture(lectureId, fullData.title || 'this lecture');
+      }
+
       // 3. Render Summary & Keywords
       this.renderSummary(data.summary || {});
 
@@ -526,14 +532,19 @@ class AccessLearnApp {
       let html = '<div style="display: grid; gap: 12px;">';
       lectures.forEach(lec => {
         html += `
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-sm); gap: 12px; flex-wrap: wrap;">
             <div>
               <strong style="font-size: 1.1rem;">${lec.title}</strong>
-              <div style="font-size: 0.85rem; color: var(--text-muted);">${lec.created_at}</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">${lec.created_at} &middot; Stored on server</div>
             </div>
-            <button class="btn btn-outline" onclick="window.appRouter.openExistingLecture('${lec.id}')">
-              View Formats
-            </button>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="btn btn-outline" onclick="window.appRouter.openExistingLecture('${lec.id}')">
+                View Formats
+              </button>
+              <button class="btn btn-outline" style="color: var(--danger); border-color: var(--danger);" onclick="window.appRouter.deleteLecture('${lec.id}', '${lec.title.replace(/'/g, "\\'")}')">
+                🗑 Delete
+              </button>
+            </div>
           </div>
         `;
       });
@@ -548,6 +559,32 @@ class AccessLearnApp {
     this.currentLectureId = lectureId;
     this.fetchAndDisplayResults(lectureId);
     this.showView('results-view');
+  }
+
+  async deleteLecture(lectureId, lectureTitle) {
+    const confirmed = confirm(`Delete "${lectureTitle}" permanently? This removes the uploaded file, audio, braille, and notes from the server. This cannot be undone.`);
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`/api/lectures/${lectureId}`, { method: 'DELETE' });
+      const res = await response.json();
+
+      if (!response.ok) {
+        throw new Error(res.detail || 'Delete failed');
+      }
+
+      if (window.a11y) window.a11y.announceToScreenReader(`Lecture "${lectureTitle}" deleted.`);
+
+      // If the deleted lecture is currently open in results view, go back to the dashboard
+      if (this.currentLectureId === lectureId) {
+        this.currentLectureId = null;
+        this.showView('dashboard-view');
+      }
+
+      this.loadRecentLectures();
+    } catch (err) {
+      alert(`Delete Error: ${err.message}`);
+    }
   }
 }
 

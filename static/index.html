@@ -259,9 +259,14 @@
     <section id="results-view" class="view-section" aria-labelledby="results-lecture-title">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
         <h1 id="results-lecture-title" style="font-size: 2rem;">Lecture Results</h1>
-        <button class="btn btn-outline" data-target="dashboard-view">
-          ← Back to Upload
-        </button>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button id="results-delete-btn" class="btn btn-outline" style="color: var(--danger); border-color: var(--danger);">
+            🗑 Delete Lecture
+          </button>
+          <button class="btn btn-outline" data-target="dashboard-view">
+            ← Back to Upload
+          </button>
+        </div>
       </div>
 
       <!-- Accessible Tabs Navigation -->

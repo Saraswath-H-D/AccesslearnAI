@@ -364,6 +364,63 @@ async def list_lectures():
         })
     return {"lectures": lectures}
 
+@router.delete("/lectures/{lecture_id}")
+async def delete_lecture(lecture_id: str):
+    """
+    Permanently deletes an uploaded/processed lecture: removes its record
+    and every generated file (source upload, TTS audio, .brf braille file,
+    related notes images). Lectures are stored by default until explicitly
+    deleted here.
+    """
+    if lecture_id not in LECTURE_STORE:
+        raise HTTPException(status_code=404, detail="Lecture ID not found.")
+
+    rec = LECTURE_STORE[lecture_id]
+    removed_files = []
+
+    # Source upload (uploaded file or downloaded YouTube audio)
+    filename = rec.get("filename")
+    if filename:
+        upload_path = settings.UPLOAD_DIR / filename
+        if upload_path.exists():
+            try:
+                upload_path.unlink()
+                removed_files.append(str(upload_path))
+            except Exception as e:
+                logger.warning(f"Could not delete upload file {upload_path}: {e}")
+
+    # Generated outputs: TTS audio, BRF braille file, related notes images
+    candidate_paths = [
+        settings.OUTPUT_DIR / f"{lecture_id}_summary.mp3",
+        settings.OUTPUT_DIR / f"{lecture_id}.brf",
+    ]
+    for path in candidate_paths:
+        if path.exists():
+            try:
+                path.unlink()
+                removed_files.append(str(path))
+            except Exception as e:
+                logger.warning(f"Could not delete output file {path}: {e}")
+
+    image_dir = settings.OUTPUT_DIR / "images" / lecture_id
+    if image_dir.exists():
+        try:
+            import shutil
+            shutil.rmtree(image_dir)
+            removed_files.append(str(image_dir))
+        except Exception as e:
+            logger.warning(f"Could not delete image directory {image_dir}: {e}")
+
+    del LECTURE_STORE[lecture_id]
+    logger.info(f"Deleted lecture {lecture_id} and {len(removed_files)} associated file(s).")
+
+    return {
+        "success": True,
+        "message": "Lecture deleted successfully.",
+        "lecture_id": lecture_id,
+        "files_removed": len(removed_files)
+    }
+
 @router.post("/demo/load/{demo_key}")
 async def load_demo_lecture(demo_key: str):
     """
