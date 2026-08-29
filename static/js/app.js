@@ -7,19 +7,78 @@ class AccessLearnApp {
     this.currentLectureId = null;
     this.statusPollInterval = null;
     this.audioPlayer = null;
+    this.uploadMode = 'file'; // 'file' | 'youtube'
     this.init();
   }
 
   init() {
     this.audioPlayer = new AccessibleAudioPlayer('main-audio-element');
     this.setupViewNavigation();
+    this.setupUploadModeToggle();
     this.setupFileUpload();
+    this.setupYouTubeInput();
     this.setupResultsTabs();
     this.setupDemoButtons();
     this.loadRecentLectures();
-    
+
     // Default to Landing view
     this.showView('landing-view');
+  }
+
+  setupUploadModeToggle() {
+    const modeBtns = document.querySelectorAll('.upload-mode-btn');
+    const filePanel = document.getElementById('upload-mode-file');
+    const youtubePanel = document.getElementById('upload-mode-youtube');
+    const submitBtn = document.getElementById('start-upload-btn');
+
+    modeBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mode = btn.getAttribute('data-mode');
+        this.uploadMode = mode;
+
+        modeBtns.forEach(b => {
+          b.classList.toggle('active', b === btn);
+          b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+        });
+
+        if (filePanel) filePanel.hidden = mode !== 'file';
+        if (youtubePanel) youtubePanel.hidden = mode !== 'youtube';
+
+        if (submitBtn) {
+          submitBtn.textContent = mode === 'youtube'
+            ? 'Fetch YouTube Audio & Convert'
+            : 'Start AI Accessibility Conversion';
+        }
+
+        if (window.a11y) {
+          window.a11y.announceToScreenReader(
+            mode === 'youtube' ? 'Switched to YouTube link input.' : 'Switched to file upload.'
+          );
+        }
+      });
+    });
+  }
+
+  setupYouTubeInput() {
+    const urlInput = document.getElementById('youtube-url-input');
+    const infoEl = document.getElementById('youtube-url-info');
+    if (!urlInput) return;
+
+    urlInput.addEventListener('input', () => {
+      const value = urlInput.value.trim();
+      if (!infoEl) return;
+      if (!value) {
+        infoEl.textContent = '';
+      } else if (this.isValidYouTubeUrl(value)) {
+        infoEl.innerHTML = '✅ Valid YouTube link detected.';
+      } else {
+        infoEl.innerHTML = '⚠️ This does not look like a valid YouTube link yet.';
+      }
+    });
+  }
+
+  isValidYouTubeUrl(url) {
+    return /(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/.test(url);
   }
 
   showView(viewId) {
@@ -95,7 +154,7 @@ class AccessLearnApp {
     if (uploadForm) {
       uploadForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        this.submitFileUpload();
+        this.submitLectureUpload();
       });
     }
   }
@@ -108,33 +167,66 @@ class AccessLearnApp {
     }
   }
 
-  async submitFileUpload() {
-    const fileInput = document.getElementById('lecture-file-input');
-    const titleInput = document.getElementById('lecture-title-input');
+  async submitLectureUpload() {
     const submitBtn = document.getElementById('start-upload-btn');
+    const titleInput = document.getElementById('lecture-title-input');
+    const originalLabel = this.uploadMode === 'youtube'
+      ? 'Fetch YouTube Audio & Convert'
+      : 'Start AI Accessibility Conversion';
 
-    if (!fileInput || fileInput.files.length === 0) {
-      alert('Please select an audio or video file to upload.');
-      return;
-    }
-
-    const file = fileInput.files[0];
-    const formData = new FormData();
-    formData.append('file', file);
-    if (titleInput && titleInput.value.trim()) {
-      formData.append('title', titleInput.value.trim());
-    }
-
+    let response;
     try {
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Uploading...';
-      }
+      if (this.uploadMode === 'youtube') {
+        const urlInput = document.getElementById('youtube-url-input');
+        const url = urlInput ? urlInput.value.trim() : '';
 
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData
-      });
+        if (!url) {
+          alert('Please paste a YouTube lecture link.');
+          return;
+        }
+        if (!this.isValidYouTubeUrl(url)) {
+          alert('That does not look like a valid YouTube link. Please check the URL and try again.');
+          return;
+        }
+
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Downloading & Scanning Audio...';
+        }
+        if (window.a11y) window.a11y.announceToScreenReader('Downloading and scanning YouTube audio.');
+
+        response = await fetch('/api/upload/youtube', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url,
+            title: titleInput && titleInput.value.trim() ? titleInput.value.trim() : null
+          })
+        });
+      } else {
+        const fileInput = document.getElementById('lecture-file-input');
+        if (!fileInput || fileInput.files.length === 0) {
+          alert('Please select an audio or video file to upload.');
+          return;
+        }
+
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+        if (titleInput && titleInput.value.trim()) {
+          formData.append('title', titleInput.value.trim());
+        }
+
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Uploading & Scanning...';
+        }
+
+        response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+      }
 
       const res = await response.json();
       if (!response.ok) {
@@ -142,7 +234,7 @@ class AccessLearnApp {
       }
 
       this.currentLectureId = res.lecture_id;
-      
+
       // Start processing backend
       await fetch(`/api/process/${this.currentLectureId}`, { method: 'POST' });
 
@@ -155,7 +247,7 @@ class AccessLearnApp {
     } finally {
       if (submitBtn) {
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Upload & Process Lecture';
+        submitBtn.textContent = originalLabel;
       }
     }
   }

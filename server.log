@@ -1,0 +1,43 @@
+INFO:     Will watch for changes in these directories: ['D:\\accesslearn\\AccesslearnAI']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [1052] using WatchFiles
+INFO:     Started server process [28164]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+2026-08-29 23:27:46,086 - app.services.youtube_service - INFO - Downloading YouTube audio for video_id=jNQXAC9IVRw
+Deprecated Feature: Support for Python version 3.10 has been deprecated. Please update to Python 3.11 or above
+[download]   0.4% of  246.27KiB at  275.13KiB/s ETA 00:00[download]   1.2% of  246.27KiB at  531.98KiB/s ETA 00:00[download]   2.8% of  246.27KiB at    1.03MiB/s ETA 00:00[download]   6.1% of  246.27KiB at  563.73KiB/s ETA 00:00[download]  12.6% of  246.27KiB at    1.02MiB/s ETA 00:00[download]  25.6% of  246.27KiB at    2.00MiB/s ETA 00:00[download]  51.6% of  246.27KiB at    2.72MiB/s ETA 00:00[download] 100.0% of  246.27KiB at    2.91MiB/s ETA 00:00[download] 100% of  246.27KiB in 00:00:00 at 460.74KiB/s                                                         INFO:     127.0.0.1:64023 - "POST /api/upload/youtube HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64028 - "POST /api/process/lec-807e9b97 HTTP/1.1" 200 OK
+2026-08-29 23:27:52,891 - app.tasks.celery_tasks - INFO - Pipeline started for lecture lec-807e9b97: Me at the zoo
+INFO:     127.0.0.1:64031 - "GET /health HTTP/1.1" 200 OK
+2026-08-29 23:27:53,901 - app.services.whisper_service - INFO - Starting transcription for D:\accesslearn\AccesslearnAI\storage\uploads\lec-807e9b97.webm
+2026-08-29 23:27:55,927 - app.services.tts_service - INFO - Generating TTS audio at D:\accesslearn\AccesslearnAI\storage\outputs\lec-807e9b97_summary.mp3
+INFO:     127.0.0.1:64038 - "GET /api/status/lec-807e9b97 HTTP/1.1" 200 OK
+2026-08-29 23:28:04,222 - app.tasks.celery_tasks - INFO - Pipeline finished successfully for lecture lec-807e9b97
+INFO:     127.0.0.1:64041 - "GET /api/status/lec-807e9b97 HTTP/1.1" 200 OK
+2026-08-29 23:28:09,270 - app.tasks.celery_tasks - INFO - Pipeline started for lecture demo-quantum-101: Introduction to Quantum Computing
+2026-08-29 23:28:10,273 - app.services.whisper_service - INFO - Starting transcription for D:\accesslearn\AccesslearnAI\storage\uploads\demo1.mp3
+2026-08-29 23:28:12,300 - app.services.tts_service - INFO - Generating TTS audio at D:\accesslearn\AccesslearnAI\storage\outputs\demo-quantum-101_summary.mp3
+2026-08-29 23:28:22,398 - app.tasks.celery_tasks - INFO - Pipeline finished successfully for lecture demo-quantum-101
+2026-08-29 23:28:22,399 - app.tasks.celery_tasks - INFO - Pipeline started for lecture demo-neural-net-201: Neural Networks & Deep Learning
+2026-08-29 23:28:23,415 - app.services.whisper_service - INFO - Starting transcription for D:\accesslearn\AccesslearnAI\storage\uploads\demo2.mp4
+2026-08-29 23:28:25,441 - app.services.tts_service - INFO - Generating TTS audio at D:\accesslearn\AccesslearnAI\storage\outputs\demo-neural-net-201_summary.mp3
+2026-08-29 23:28:35,286 - app.tasks.celery_tasks - INFO - Pipeline finished successfully for lecture demo-neural-net-201
+INFO:     127.0.0.1:64042 - "GET /api/lectures HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64054 - "GET /api/lectures HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62066 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54503 - "GET /static/js/network_bg.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:62066 - "GET /static/css/styles.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57014 - "GET /static/js/accessibility.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:51805 - "GET /static/js/app.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55264 - "GET /static/js/audio_player.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:61556 - "GET /static/js/braille_viewer.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:51805 - "GET /api/lectures HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50436 - "POST /api/demo/load/quantum HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50436 - "GET /api/status/demo-quantum-101 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50436 - "GET /api/lectures HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54780 - "GET /api/audio/demo-quantum-101 HTTP/1.1" 206 Partial Content
+INFO:     127.0.0.1:50436 - "POST /api/demo/load/neural HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50436 - "GET /api/status/demo-neural-net-201 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50436 - "GET /api/lectures HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62910 - "GET /api/audio/demo-neural-net-201 HTTP/1.1" 206 Partial Content

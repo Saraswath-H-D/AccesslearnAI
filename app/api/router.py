@@ -6,9 +6,11 @@ from pathlib import Path
 from typing import Optional
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse, JSONResponse
+from pydantic import BaseModel
 
 from app.config import settings
 from app.utils.audio_utils import AudioUtils
+from app.services.youtube_service import youtube_service
 from app.tasks.celery_tasks import (
     LECTURE_STORE,
     create_lecture_record,
@@ -20,6 +22,30 @@ from app.tasks.celery_tasks import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["AccessLearn API"])
+
+
+class YouTubeUploadRequest(BaseModel):
+    url: str
+    title: Optional[str] = None
+
+
+def _is_broker_available(redis_url: str, timeout: float = 0.3) -> bool:
+    """
+    Fast, short-timeout reachability probe for the Celery/Redis broker.
+
+    Celery's own connection retry policy on a real `.delay()` call can block
+    for a long time (many seconds per retry, up to ~20 retries) when Redis is
+    unreachable -- and since that call is made synchronously from an async
+    request handler, it freezes the entire server, not just one request.
+    Checking reachability up front keeps the "instant fallback to a
+    background thread" behavior actually instant.
+    """
+    try:
+        import redis
+        client = redis.Redis.from_url(redis_url, socket_connect_timeout=timeout, socket_timeout=timeout)
+        return client.ping()
+    except Exception:
+        return False
 
 def ensure_demo_lectures():
     """Populates high quality demo lectures lazily when needed."""
@@ -62,15 +88,84 @@ async def upload_lecture(
         logger.error(f"File write error: {e}")
         raise HTTPException(status_code=500, detail="Failed to save uploaded file.")
         
+    # Accurate integrity scan: reject empty/truncated/corrupted uploads
+    # before they ever reach the AI pipeline.
+    scan = AudioUtils.scan_media_file(saved_path)
+    if not scan["valid"]:
+        saved_path.unlink(missing_ok=True)
+        raise HTTPException(status_code=422, detail=f"Uploaded file failed the accuracy scan: {scan['reason']}")
+
     file_info = AudioUtils.get_file_info(saved_path)
-    
+    file_info["scan"] = scan
+
     # Initialize record
     record = create_lecture_record(lecture_id, lecture_title, saved_filename)
     record["file_info"] = file_info
-    
+
     return {
         "success": True,
-        "message": "File uploaded successfully. Ready for processing.",
+        "message": "File uploaded successfully and verified. Ready for processing.",
+        "lecture_id": lecture_id,
+        "title": lecture_title,
+        "file_info": file_info
+    }
+
+@router.post("/upload/youtube")
+async def upload_youtube_lecture(payload: YouTubeUploadRequest):
+    """
+    Ingests an educational YouTube video by URL: validates the link,
+    downloads its audio track, runs the same accuracy scan as a direct file
+    upload, and registers it for the standard AI accessibility pipeline.
+    """
+    url = (payload.url or "").strip()
+    if not url or not youtube_service.is_valid_youtube_url(url):
+        raise HTTPException(
+            status_code=400,
+            detail="Please provide a valid YouTube video URL (e.g. https://www.youtube.com/watch?v=... or https://youtu.be/...)."
+        )
+
+    lecture_id = f"lec-{uuid.uuid4().hex[:8]}"
+
+    try:
+        result = youtube_service.download_audio(url, lecture_id, settings.UPLOAD_DIR)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"YouTube download failed for {url}: {e}")
+        raise HTTPException(status_code=502, detail=f"Failed to download audio from YouTube: {e}")
+
+    downloaded_path: Path = result["file_path"]
+
+    if not AudioUtils.is_valid_file(downloaded_path.name):
+        downloaded_path.unlink(missing_ok=True)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Downloaded YouTube audio format '{downloaded_path.suffix}' is unsupported."
+        )
+
+    # Same accuracy scan as direct uploads, so a broken/partial download
+    # never silently enters the pipeline.
+    scan = AudioUtils.scan_media_file(downloaded_path)
+    if not scan["valid"]:
+        downloaded_path.unlink(missing_ok=True)
+        raise HTTPException(status_code=422, detail=f"Downloaded YouTube audio failed the accuracy scan: {scan['reason']}")
+
+    lecture_title = payload.title.strip() if payload.title and payload.title.strip() else result["title"]
+    saved_filename = downloaded_path.name
+
+    file_info = AudioUtils.get_file_info(downloaded_path)
+    file_info["scan"] = scan
+    file_info["source"] = "youtube"
+    file_info["source_url"] = result["webpage_url"]
+
+    record = create_lecture_record(lecture_id, lecture_title, saved_filename)
+    record["file_info"] = file_info
+    record["source"] = "youtube"
+    record["source_url"] = result["webpage_url"]
+
+    return {
+        "success": True,
+        "message": "YouTube audio downloaded and verified. Ready for processing.",
         "lecture_id": lecture_id,
         "title": lecture_title,
         "file_info": file_info
@@ -96,11 +191,18 @@ async def process_lecture(lecture_id: str, background_tasks: BackgroundTasks):
     file_path_str = str(settings.UPLOAD_DIR / filename)
     lecture_title = rec["title"]
     
-    # Check if Celery/Redis is active, otherwise fallback to Python Background thread
-    try:
-        process_lecture_task.delay(lecture_id, file_path_str, lecture_title)
-        mode = "celery_redis"
-    except Exception:
+    # Check if Celery/Redis is active, otherwise fallback to Python Background thread.
+    # The reachability check is done up front (fast, short-timeout) rather than
+    # relying on .delay() to raise, since a real Celery call retries against an
+    # unreachable broker for a long time and would otherwise block the server.
+    if _is_broker_available(settings.REDIS_URL):
+        try:
+            process_lecture_task.delay(lecture_id, file_path_str, lecture_title)
+            mode = "celery_redis"
+        except Exception:
+            background_tasks.add_task(process_lecture_pipeline_core, lecture_id, file_path_str, lecture_title)
+            mode = "async_thread"
+    else:
         # Fallback to FastAPI BackgroundTasks thread runner
         background_tasks.add_task(process_lecture_pipeline_core, lecture_id, file_path_str, lecture_title)
         mode = "async_thread"

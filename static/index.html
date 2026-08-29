@@ -156,13 +156,45 @@
           <input type="text" id="lecture-title-input" class="btn btn-outline" style="width: 100%; text-align: left; padding: 12px;" placeholder="e.g. CS101: Introduction to Data Structures">
         </div>
 
-        <div id="file-drop-zone" class="upload-card" tabindex="0" aria-label="Upload lecture audio or video file area. Click or drag and drop file here.">
-          <div class="upload-icon" aria-hidden="true">📁</div>
-          <h2>Drag & Drop Audio or Video File Here</h2>
-          <p style="color: var(--text-secondary); margin: 8px 0 16px 0;">Supported formats: MP3, WAV, M4A, OGG, MP4, WebM (Max 500MB)</p>
-          <button type="button" class="btn btn-outline">Browse Files</button>
-          <input type="file" id="lecture-file-input" accept="audio/*,video/*" style="display: none;">
-          <div id="selected-file-info" style="margin-top: 16px; color: var(--primary);"></div>
+        <!-- Upload Mode Tabs: choose how the lecture source is provided -->
+        <div class="upload-mode-tabs" role="tablist" aria-label="Choose how to provide the lecture">
+          <button type="button" class="upload-mode-btn active" data-mode="file" role="tab" aria-selected="true" aria-controls="upload-mode-file">
+            📁 Upload File
+          </button>
+          <button type="button" class="upload-mode-btn" data-mode="youtube" role="tab" aria-selected="false" aria-controls="upload-mode-youtube">
+            ▶️ YouTube Link
+          </button>
+        </div>
+
+        <!-- Mode: Local File Upload (audio or video) -->
+        <div id="upload-mode-file" class="upload-mode-panel">
+          <div id="file-drop-zone" class="upload-card" tabindex="0" aria-label="Upload lecture audio or video file area. Click or drag and drop file here.">
+            <div class="upload-icon" aria-hidden="true">📁</div>
+            <h2>Drag & Drop Audio or Video File Here</h2>
+            <p style="color: var(--text-secondary); margin: 8px 0 16px 0;">Supported formats: MP3, WAV, M4A, OGG, MP4, WebM, FLAC (Max 500MB)</p>
+            <button type="button" class="btn btn-outline">Browse Files</button>
+            <input type="file" id="lecture-file-input" accept="audio/*,video/*" style="display: none;">
+            <div id="selected-file-info" style="margin-top: 16px; color: var(--primary);"></div>
+          </div>
+        </div>
+
+        <!-- Mode: YouTube Educational Video Link -->
+        <div id="upload-mode-youtube" class="upload-mode-panel" hidden>
+          <div class="upload-card" style="cursor: default;">
+            <div class="upload-icon" aria-hidden="true">▶️</div>
+            <h2>Paste a YouTube Lecture Link</h2>
+            <p style="color: var(--text-secondary); margin: 8px 0 16px 0;">Works with any public educational YouTube video (youtube.com or youtu.be). Audio is downloaded and accuracy-scanned automatically before conversion.</p>
+            <label for="youtube-url-input" class="sr-only">YouTube video URL</label>
+            <input
+              type="url"
+              id="youtube-url-input"
+              class="btn btn-outline"
+              style="width: 100%; text-align: left; padding: 12px; cursor: text;"
+              placeholder="https://www.youtube.com/watch?v=..."
+              inputmode="url"
+              autocomplete="off">
+            <div id="youtube-url-info" style="margin-top: 16px; color: var(--primary);"></div>
+          </div>
         </div>
 
         <div style="text-align: center; margin-bottom: 40px;">

@@ -491,6 +491,40 @@ body {
   margin-bottom: 18px;
 }
 
+/* Upload Mode Tabs (File vs YouTube Link) */
+.upload-mode-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.upload-mode-btn {
+  background: var(--bg-surface);
+  border: 2px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 12px 22px;
+  font-size: 1rem;
+  font-weight: 800;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-speed);
+}
+.upload-mode-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.upload-mode-btn.active {
+  color: #ffffff;
+  background: var(--grad-primary);
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.upload-mode-panel[hidden] {
+  display: none;
+}
+
 /* Pipeline Progress Component */
 .pipeline-container {
   background: var(--bg-surface);
