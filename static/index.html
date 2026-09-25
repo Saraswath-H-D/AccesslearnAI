@@ -13,6 +13,8 @@
   
   <!-- Stylesheets -->
   <link rel="stylesheet" href="/static/css/styles.css">
+  <!-- Mermaid: renders the video-grounded flowcharts inside Simplified Notes -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
 </head>
 <body>
   <!-- Keyboard Skip Link -->
@@ -221,27 +223,39 @@
         
         <p id="pipeline-stage-text" style="text-align: center; font-weight: 700; color: var(--primary); font-size: 1.1rem;">Initializing AI Pipeline...</p>
 
-        <!-- Pipeline Steps -->
+        <!-- Pipeline Steps (must match STAGE_NAMES in app/tasks/celery_tasks.py) -->
         <div class="pipeline-steps">
           <div class="pipeline-step completed">
             <div class="pipeline-badge">1</div>
-            <strong style="font-size: 0.9rem;">Upload</strong>
+            <strong style="font-size: 0.85rem;">Upload</strong>
           </div>
           <div class="pipeline-step">
             <div class="pipeline-badge">2</div>
-            <strong style="font-size: 0.9rem;">Transcription</strong>
+            <strong style="font-size: 0.85rem;">Transcription</strong>
           </div>
           <div class="pipeline-step">
             <div class="pipeline-badge">3</div>
-            <strong style="font-size: 0.9rem;">AI Processing</strong>
+            <strong style="font-size: 0.85rem;">Visual Analysis</strong>
           </div>
           <div class="pipeline-step">
             <div class="pipeline-badge">4</div>
-            <strong style="font-size: 0.9rem;">Accessibility</strong>
+            <strong style="font-size: 0.85rem;">Understanding Video</strong>
           </div>
           <div class="pipeline-step">
             <div class="pipeline-badge">5</div>
-            <strong style="font-size: 0.9rem;">Completed</strong>
+            <strong style="font-size: 0.85rem;">Simplified Notes</strong>
+          </div>
+          <div class="pipeline-step">
+            <div class="pipeline-badge">6</div>
+            <strong style="font-size: 0.85rem;">Summary &amp; Key Points</strong>
+          </div>
+          <div class="pipeline-step">
+            <div class="pipeline-badge">7</div>
+            <strong style="font-size: 0.85rem;">Accessibility</strong>
+          </div>
+          <div class="pipeline-step">
+            <div class="pipeline-badge">8</div>
+            <strong style="font-size: 0.85rem;">Completed</strong>
           </div>
         </div>
       </div>
@@ -251,9 +265,15 @@
          VIEW 4: RESULTS PAGE & ACCESSIBLE TABS
          =================================================================== -->
     <section id="results-view" class="view-section" aria-labelledby="results-lecture-title">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
         <h1 id="results-lecture-title" style="font-size: 2rem;">Lecture Results</h1>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+          <label for="language-select" class="sr-only">Language</label>
+          <select id="language-select" class="btn btn-outline" style="font-weight: 700;">
+            <option value="en">🌐 English</option>
+            <option value="kn">ಕನ್ನಡ Kannada</option>
+            <option value="hi">हिन्दी Hindi</option>
+          </select>
           <button id="results-delete-btn" class="btn btn-outline" style="color: var(--danger); border-color: var(--danger);">
             🗑 Delete Lecture
           </button>
@@ -261,6 +281,13 @@
             ← Back to Upload
           </button>
         </div>
+      </div>
+      <p id="language-status" class="text-muted" style="margin-bottom: 16px; font-size: 0.9rem;" aria-live="polite"></p>
+
+      <!-- Original uploaded video/audio, seeked by transcript timestamps -->
+      <div id="source-player-card" class="audio-player-card" style="margin-bottom: 24px;">
+        <video id="source-video-player" controls style="width: 100%; max-height: 420px; background: #000; border-radius: var(--radius-sm); display: none;" aria-label="Original uploaded lecture video"></video>
+        <audio id="source-audio-player" controls style="width: 100%; display: none;" aria-label="Original uploaded lecture audio"></audio>
       </div>
 
       <!-- Accessible Tabs Navigation -->
@@ -275,30 +302,33 @@
 
       <!-- TAB 1: TRANSCRIPT -->
       <div id="tab-transcript" class="tab-content active" role="tabpanel">
-        <h2 style="margin-bottom: 16px;">Whisper Lecture Transcript</h2>
+        <h2 style="margin-bottom: 16px;">Complete Lecture Transcript</h2>
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label for="transcript-search" style="display:block; font-weight:700; margin-bottom:6px;">Search transcript</label>
+          <input type="search" id="transcript-search" class="btn btn-outline" style="width:100%; text-align:left; padding:10px;" placeholder="Search for a word or phrase...">
+        </div>
         <div id="transcript-content-box">
           <p>Loading transcript...</p>
         </div>
       </div>
 
-      <!-- TAB 2: SIMPLIFIED CONTENT -->
+      <!-- TAB 2: SIMPLIFIED CONTENT (primary learning experience) -->
       <div id="tab-simplified" class="tab-content" role="tabpanel">
-        <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+          <h2 id="simplified-title-box" style="margin: 0;">Simplified Notes</h2>
           <button id="notes-pdf-download-btn" class="btn btn-primary" style="font-size: 0.9rem;">
             ⬇ Download Notes as PDF
           </button>
         </div>
-        <div id="simplified-images-box" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px;"></div>
-        <div id="simplified-easy-box" style="margin-bottom: 24px;"></div>
         <div id="simplified-notes-box"></div>
       </div>
 
-      <!-- TAB 3: SUMMARY & KEYWORDS -->
+      <!-- TAB 3: SUMMARY -->
       <div id="tab-summary" class="tab-content" role="tabpanel">
-        <h2 style="margin-bottom: 12px;">Executive Summary</h2>
-        <p id="summary-text-box" style="font-size: 1.15rem; background: var(--bg-primary); padding: 16px; border-radius: var(--radius-sm); margin-bottom: 24px;"></p>
-        <h2 style="margin-bottom: 12px;">Important Keywords & Concepts</h2>
-        <div id="keywords-grid-box" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;"></div>
+        <h2 style="margin-bottom: 12px;">Short Summary</h2>
+        <p id="summary-short-box" style="font-size: 1.15rem; background: var(--bg-primary); padding: 16px; border-radius: var(--radius-sm); margin-bottom: 24px;"></p>
+        <h2 style="margin-bottom: 12px;">Detailed Summary</h2>
+        <p id="summary-detailed-box" style="background: var(--bg-primary); padding: 16px; border-radius: var(--radius-sm); line-height: 1.7;"></p>
       </div>
 
       <!-- TAB 4: KEY POINTS -->
@@ -307,12 +337,23 @@
         <div id="keypoints-list-box"></div>
       </div>
 
-      <!-- TAB 5: MP3 AUDIO PLAYER -->
+      <!-- TAB 5: LISTEN TO NOTES (multilingual TTS) -->
       <div id="tab-audio" class="tab-content" role="tabpanel">
-        <h2 style="margin-bottom: 16px;">Text-to-Speech Lecture Recap</h2>
+        <h2 style="margin-bottom: 16px;">Listen to Notes</h2>
         <div class="audio-player-card">
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label for="audio-source-select" style="display:block; font-weight:700; margin-bottom:6px;">Content</label>
+            <select id="audio-source-select" class="btn btn-outline" style="width:100%; text-align:left;">
+              <option value="notes">Simplified Notes</option>
+              <option value="summary">Summary</option>
+              <option value="key_points">Key Points</option>
+            </select>
+          </div>
+          <button id="audio-generate-btn" class="btn btn-primary" style="margin-bottom: 16px;">🔊 Generate &amp; Play</button>
+          <p id="audio-gen-status" class="text-muted" style="margin-bottom: 12px;" aria-live="polite"></p>
+
           <audio id="main-audio-element" style="display: none;"></audio>
-          
+
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
             <div style="font-weight: 700; font-size: 1.1rem;">Synthesized Speech Audio</div>
             <button id="audio-download-btn" class="btn btn-outline" style="font-size: 0.9rem;">
@@ -362,9 +403,21 @@
           </div>
         </div>
 
+        <div class="form-group" style="margin-bottom: 16px; max-width: 320px;">
+          <label for="braille-source-select" style="display:block; font-weight:700; margin-bottom:6px;">Content</label>
+          <select id="braille-source-select" class="btn btn-outline" style="width:100%; text-align:left;">
+            <option value="notes">Simplified Notes</option>
+            <option value="summary">Summary</option>
+            <option value="key_points">Key Points</option>
+          </select>
+        </div>
+        <button id="braille-generate-btn" class="btn btn-primary" style="margin-bottom: 16px;">Generate Braille</button>
+
         <div id="braille-stats-info" style="margin-bottom: 12px; font-weight: 600; color: var(--text-secondary);">
           Formatted 40-cell grid | Standard Grade 2 BRF
         </div>
+
+        <div id="braille-limitation-notice" class="hidden" role="alert" style="background: var(--warning-bg, #fffbeb); border: 1px solid #f59e0b; color: #92400e; padding: 14px; border-radius: var(--radius-sm); margin-bottom: 12px;"></div>
 
         <div id="braille-display-box" class="braille-container" aria-label="Braille content preview">
           Loading Braille code...

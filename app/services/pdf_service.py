@@ -25,10 +25,9 @@ def _md_bold_to_html(text: str) -> str:
 
 class NotesPDFService:
     """
-    Renders a lecture's simplified study notes -- easy explanation, key
-    takeaways, structured notes, keywords, and related illustrative images --
-    into a single downloadable, print-friendly PDF, so students can study
-    offline with visuals attached to the text.
+    Renders a lecture's Simplified Notes (dynamic sections, flowcharts,
+    real video-frame visuals), Summary, and Key Points into a single
+    downloadable, print-friendly PDF, so students can study offline.
     """
 
     def build_pdf(
@@ -52,68 +51,57 @@ class NotesPDFService:
         note_heading_style = ParagraphStyle("NoteHeading", parent=styles["Heading3"], textColor=colors.HexColor("#1e293b"), spaceBefore=10, spaceAfter=4)
         body_style = ParagraphStyle("BodyStyle", parent=styles["BodyText"], fontSize=11, leading=16)
         caption_style = ParagraphStyle("CaptionStyle", parent=styles["BodyText"], fontSize=8.5, textColor=colors.grey, alignment=1, spaceBefore=4)
+        mono_style = ParagraphStyle("MonoStyle", parent=styles["BodyText"], fontName="Courier", fontSize=9, leading=13, textColor=colors.HexColor("#334155"))
 
         story = []
-        story.append(Paragraph("AccessLearn AI &mdash; Simplified Study Notes", brand_style))
-        story.append(Paragraph(lecture_title or "Lecture Notes", title_style))
+        story.append(Paragraph("AccessLearn AI &mdash; AI Video Learning Notes", brand_style))
+        story.append(Paragraph(lecture_title or simplified.get("title") or "Lecture Notes", title_style))
         story.append(Spacer(1, 10))
 
-        if summary.get("short_summary"):
+        if summary.get("shortSummary"):
             story.append(Paragraph("Executive Summary", heading_style))
-            story.append(Paragraph(summary["short_summary"], body_style))
-
-        if simplified.get("easy_explanation"):
-            story.append(Paragraph("Easy Explanation", heading_style))
-            story.append(Paragraph(simplified["easy_explanation"], body_style))
-
-        # Related visuals, placed early so readers get visual context
-        # alongside the text right from the start of the document.
-        images = simplified.get("images") or []
-        valid_images = [img for img in images if img.get("local_path") and Path(img["local_path"]).exists()]
-        if valid_images:
-            story.append(Paragraph("Related Visuals", heading_style))
-            row_cells = []
-            for img in valid_images[:4]:
-                try:
-                    rl_img = RLImage(img["local_path"], width=1.55 * inch, height=1.0 * inch)
-                except Exception as e:
-                    logger.warning(f"Skipping image in PDF ({img.get('local_path')}): {e}")
-                    continue
-                caption_text = img.get("caption", "")
-                row_cells.append([rl_img, Paragraph(caption_text, caption_style)])
-            if row_cells:
-                table = Table([row_cells], colWidths=[1.65 * inch] * len(row_cells))
-                table.setStyle(TableStyle([
-                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ]))
-                story.append(table)
-            story.append(Spacer(1, 6))
-
-        if simplified.get("simplified_content"):
-            story.append(Paragraph("Plain-Language Breakdown", heading_style))
-            for line in simplified["simplified_content"].split("\n"):
-                line = line.strip().lstrip("•").strip()
-                if line:
-                    story.append(Paragraph(f"&bull; {_md_bold_to_html(line)}", body_style))
-                    story.append(Spacer(1, 4))
+            story.append(Paragraph(summary["shortSummary"], body_style))
 
         if key_points:
             story.append(Paragraph("Key Takeaways", heading_style))
             items = [ListItem(Paragraph(_md_bold_to_html(kp), body_style)) for kp in key_points]
             story.append(ListFlowable(items, bulletType="bullet", leftIndent=16))
 
-        if simplified.get("study_notes"):
-            story.append(Paragraph("Structured Study Notes", heading_style))
-            for note in simplified["study_notes"]:
-                story.append(Paragraph(note.get("heading", ""), note_heading_style))
-                story.append(Paragraph(_md_bold_to_html(note.get("content", "")), body_style))
+        # Simplified Notes: dynamic per-video sections, each with its own
+        # optional flowchart (accessible text form, for a print medium) and
+        # optional real video-frame visual -- grounded content, not a fixed
+        # template (Section 6 of the brief).
+        sections = simplified.get("sections") or []
+        if sections:
+            story.append(Paragraph("Simplified Notes", heading_style))
+            for section in sections:
+                story.append(Paragraph(section.get("heading", ""), note_heading_style))
+                story.append(Paragraph(_md_bold_to_html(section.get("content", "")), body_style))
 
-        if summary.get("keywords"):
-            story.append(Paragraph("Important Keywords", heading_style))
-            for kw in summary["keywords"]:
-                story.append(Paragraph(f"<b>{kw.get('term', '')}</b>: {kw.get('definition', '')}", body_style))
-                story.append(Spacer(1, 4))
+                visual_path = section.get("visualFramePath")
+                if visual_path and Path(visual_path).exists():
+                    try:
+                        rl_img = RLImage(visual_path, width=2.6 * inch, height=1.6 * inch)
+                        story.append(Spacer(1, 4))
+                        story.append(rl_img)
+                        if section.get("visualCaption"):
+                            story.append(Paragraph(section["visualCaption"], caption_style))
+                    except Exception as e:
+                        logger.warning(f"Skipping visual in PDF ({visual_path}): {e}")
+
+                flowchart = section.get("flowchart")
+                if flowchart:
+                    story.append(Spacer(1, 6))
+                    story.append(Paragraph(f"<b>{flowchart.get('title', 'Process Flowchart')}</b>", body_style))
+                    story.append(Paragraph(
+                        (flowchart.get("accessibleText", "") or "").replace("\n", "<br/>"),
+                        mono_style,
+                    ))
+                story.append(Spacer(1, 8))
+
+        if summary.get("detailedSummary"):
+            story.append(Paragraph("Detailed Summary", heading_style))
+            story.append(Paragraph(summary["detailedSummary"], body_style))
 
         doc.build(story)
         buffer.seek(0)

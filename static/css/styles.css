@@ -767,6 +767,61 @@ body {
   border: 0;
 }
 
+.hidden { display: none !important; }
+
+/* Simplified Notes: dynamic per-video sections */
+.note-section-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+}
+.note-section-card h3 { font-size: 1.25rem; margin-bottom: 12px; color: var(--primary); }
+.note-timestamp-btn {
+  background: var(--primary-light);
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.note-timestamp-btn:hover { background: var(--primary); color: #fff; }
+.note-visual-figure { margin: 16px 0; text-align: center; }
+.note-visual-figure img {
+  max-width: 100%;
+  max-height: 320px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+}
+.note-visual-figure figcaption {
+  margin-top: 8px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+.note-flowchart-box {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin: 16px 0;
+  overflow-x: auto;
+}
+.note-flowchart-box h4 { margin-bottom: 10px; color: var(--text-primary); }
+.note-flowchart-accessible-text {
+  white-space: pre-wrap;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border-color);
+  color: var(--text-secondary);
+}
+
 .main-footer {
   background: var(--bg-surface);
   backdrop-filter: blur(12px);

@@ -8,20 +8,50 @@ class AccessLearnApp {
     this.statusPollInterval = null;
     this.audioPlayer = null;
     this.uploadMode = 'file'; // 'file' | 'youtube'
+    this.currentLanguage = 'en'; // 'en' | 'hi' | 'kn'
     this.init();
   }
 
   init() {
     this.audioPlayer = new AccessibleAudioPlayer('main-audio-element');
+    if (window.mermaid) {
+      mermaid.initialize({ startOnLoad: false, theme: 'default' });
+    }
     this.setupViewNavigation();
     this.setupUploadModeToggle();
     this.setupFileUpload();
     this.setupYouTubeInput();
     this.setupResultsTabs();
+    this.setupLanguageSelector();
+    this.setupTranscriptSearch();
+    this.setupAudioGeneration();
+    this.setupBrailleGeneration();
     this.loadRecentLectures();
 
     // Default to Landing view
     this.showView('landing-view');
+  }
+
+  setupLanguageSelector() {
+    const select = document.getElementById('language-select');
+    if (!select) return;
+    select.addEventListener('change', () => {
+      this.currentLanguage = select.value;
+      if (this.currentLectureId) {
+        this.loadLanguageDependentContent(this.currentLectureId, this.currentLanguage);
+      }
+    });
+  }
+
+  setupTranscriptSearch() {
+    const input = document.getElementById('transcript-search');
+    if (!input) return;
+    input.addEventListener('input', () => {
+      const q = input.value.trim().toLowerCase();
+      const segments = this._lastTranscriptSegments || [];
+      const filtered = q ? segments.filter(s => s.text.toLowerCase().includes(q)) : segments;
+      this._renderTranscriptSegments(filtered);
+    });
   }
 
   setupUploadModeToggle() {
@@ -303,17 +333,22 @@ class AccessLearnApp {
       const fullData = await response.json();
       const data = fullData.data || {};
 
+      this.currentLectureId = lectureId;
+      this.currentLanguage = 'en';
+      const langSelect = document.getElementById('language-select');
+      if (langSelect) langSelect.value = 'en';
+
       // Set Lecture Title
       const titleEl = document.getElementById('results-lecture-title');
       if (titleEl) titleEl.textContent = fullData.title;
 
-      // 1. Render Transcript
+      // 1. Original uploaded video/audio (seeked by transcript timestamps)
+      this.loadSourcePlayer(lectureId, data.video || {});
+
+      // 2. Render Transcript (always English/original -- verbatim ASR, not translated)
       this.renderTranscript(data.transcript || {});
 
-      // 2. Render Simplified Content
-      this.renderSimplified(data.simplified || {});
-
-      // 2b. Wire up the PDF notes download button
+      // 3. Wire up the PDF notes download button
       const pdfBtn = document.getElementById('notes-pdf-download-btn');
       if (pdfBtn) {
         pdfBtn.onclick = () => {
@@ -321,33 +356,25 @@ class AccessLearnApp {
         };
       }
 
-      // 2c. Wire up the delete button for this lecture
+      // 4. Wire up the delete button for this lecture
       const deleteBtn = document.getElementById('results-delete-btn');
       if (deleteBtn) {
         deleteBtn.onclick = () => this.deleteLecture(lectureId, fullData.title || 'this lecture');
       }
 
-      // 3. Render Summary & Keywords
-      this.renderSummary(data.summary || {});
+      // 5. Simplified Notes / Summary / Key Points (language-aware, fetched
+      // via dedicated endpoints so switching language later just re-calls this)
+      await this.loadLanguageDependentContent(lectureId, this.currentLanguage);
 
-      // 4. Render Key Points
-      this.renderKeyPoints(data.key_points || []);
-
-      // 5. Load Audio Player
-      if (data.audio && data.audio.url) {
-        this.audioPlayer.loadAudio(data.audio.url);
-        const downloadAudioBtn = document.getElementById('audio-download-btn');
-        if (downloadAudioBtn) {
-          downloadAudioBtn.onclick = () => {
-            window.location.href = `/api/audio/${lectureId}?download=true`;
-          };
-        }
-      }
-
-      // 6. Load Braille Display
-      if (data.braille && window.brailleViewer) {
-        window.brailleViewer.loadBrailleData(data.braille, lectureId);
-      }
+      // Reset the Audio/Braille tabs to their not-yet-generated state --
+      // both are explicit "choose content + language, then Generate" flows.
+      const audioStatus = document.getElementById('audio-gen-status');
+      if (audioStatus) audioStatus.textContent = '';
+      document.getElementById('main-audio-element')?.removeAttribute('src');
+      const brailleNotice = document.getElementById('braille-limitation-notice');
+      if (brailleNotice) brailleNotice.classList.add('hidden');
+      const brailleBox = document.getElementById('braille-display-box');
+      if (brailleBox) brailleBox.textContent = 'Choose content and click "Generate Braille".';
 
       this.loadRecentLectures();
 
@@ -356,13 +383,59 @@ class AccessLearnApp {
     }
   }
 
+  loadSourcePlayer(lectureId, videoInfo) {
+    const videoEl = document.getElementById('source-video-player');
+    const audioEl = document.getElementById('source-audio-player');
+    if (!videoEl || !audioEl) return;
+
+    const src = `/api/video/${lectureId}`;
+    if (videoInfo.is_video) {
+      videoEl.src = src;
+      videoEl.style.display = 'block';
+      audioEl.style.display = 'none';
+      this._sourceMediaEl = videoEl;
+    } else {
+      audioEl.src = src;
+      audioEl.style.display = 'block';
+      videoEl.style.display = 'none';
+      this._sourceMediaEl = audioEl;
+    }
+  }
+
+  async loadLanguageDependentContent(lectureId, lang) {
+    const statusEl = document.getElementById('language-status');
+    if (statusEl) statusEl.textContent = lang === 'en' ? '' : 'Translating with Gemini... this may take a moment on first request.';
+
+    try {
+      const [notesResp, summaryResp] = await Promise.all([
+        fetch(`/api/simplified/${lectureId}?lang=${lang}`),
+        fetch(`/api/summary/${lectureId}?lang=${lang}`),
+      ]);
+      const notes = notesResp.ok ? await notesResp.json() : {};
+      const summaryData = summaryResp.ok ? await summaryResp.json() : {};
+
+      this.renderSimplified(notes);
+      this.renderSummary(summaryData.summary || {});
+      this.renderKeyPoints(summaryData.key_points || []);
+      if (statusEl) statusEl.textContent = '';
+    } catch (err) {
+      console.error('Failed to load language-dependent content:', err);
+      if (statusEl) statusEl.textContent = `Error loading ${lang} content: ${err.message}`;
+    }
+  }
+
   renderTranscript(transcriptData) {
+    this._lastTranscriptFullText = transcriptData.full_text || '';
+    this._lastTranscriptSegments = transcriptData.segments || [];
+    this._renderTranscriptSegments(this._lastTranscriptSegments);
+  }
+
+  _renderTranscriptSegments(segments) {
     const container = document.getElementById('transcript-content-box');
     if (!container) return;
 
-    const segments = transcriptData.segments || [];
     if (segments.length === 0) {
-      container.innerHTML = `<p>${transcriptData.full_text || 'No transcript text available.'}</p>`;
+      container.innerHTML = `<p>${this._lastTranscriptFullText || 'No matching transcript segments.'}</p>`;
       return;
     }
 
@@ -370,7 +443,7 @@ class AccessLearnApp {
     segments.forEach(seg => {
       html += `
         <div class="transcript-segment">
-          <span class="timestamp-tag" onclick="window.appRouter.audioPlayer.seekToSeconds(${seg.start_seconds})">
+          <span class="timestamp-tag" onclick="window.appRouter.seekSourcePlayer(${seg.start_seconds})">
             ⏱ ${seg.timestamp}
           </span>
           <p>${seg.text}</p>
@@ -380,71 +453,96 @@ class AccessLearnApp {
     container.innerHTML = html;
   }
 
-  renderSimplified(simplifiedData) {
-    const easyBox = document.getElementById('simplified-easy-box');
+  seekSourcePlayer(seconds) {
+    const el = this._sourceMediaEl;
+    if (!el) return;
+    el.currentTime = seconds;
+    el.play().catch(() => {});
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (window.a11y) window.a11y.announceToScreenReader(`Video seeked to ${Math.floor(seconds / 60)} minutes ${Math.floor(seconds % 60)} seconds`);
+  }
+
+  renderSimplified(notesData) {
+    const titleBox = document.getElementById('simplified-title-box');
     const notesBox = document.getElementById('simplified-notes-box');
-    const imagesBox = document.getElementById('simplified-images-box');
+    if (titleBox) titleBox.textContent = notesData.title || 'Simplified Notes';
+    if (!notesBox) return;
 
-    if (imagesBox) {
-      const images = simplifiedData.images || [];
-      if (images.length === 0) {
-        imagesBox.innerHTML = '';
-      } else {
-        let imgHtml = '';
-        images.forEach(img => {
-          imgHtml += `
-            <div class="note-image-card">
-              <img src="${img.url}" alt="Illustration related to: ${img.caption}" loading="lazy">
-              <div class="note-image-caption">${img.caption}</div>
-            </div>
-          `;
-        });
-        imagesBox.innerHTML = imgHtml;
-      }
+    const sections = notesData.sections || [];
+    if (sections.length === 0) {
+      notesBox.innerHTML = '<p style="color: var(--text-secondary);">Simplified Notes are not available for this lecture yet.</p>';
+      return;
     }
 
-    if (easyBox) {
-      easyBox.innerHTML = `
-        <h3>Easy Explanation</h3>
-        <p>${simplifiedData.easy_explanation || ''}</p>
-        <div style="margin-top: 16px; white-space: pre-wrap;">${simplifiedData.simplified_content || ''}</div>
-      `;
+    notesBox.innerHTML = sections.map((s, idx) => this._renderNoteSection(s, idx)).join('');
+
+    // Render each section's flowchart (only sections that actually have one --
+    // never forced) with Mermaid, and load real extracted-frame visuals.
+    if (window.mermaid) {
+      mermaid.run({ querySelector: '.note-mermaid-diagram' }).catch(err => console.warn('Mermaid render error:', err));
+    }
+    notesBox.querySelectorAll('[data-seek]').forEach(btn => {
+      btn.addEventListener('click', () => this.seekSourcePlayer(parseFloat(btn.dataset.seek)));
+    });
+  }
+
+  _renderNoteSection(section, idx) {
+    const escapeHtml = (str) => {
+      const div = document.createElement('div');
+      div.textContent = str || '';
+      return div.innerHTML;
+    };
+
+    let html = `<div class="note-section-card">`;
+    html += `<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">`;
+    html += `<h3 style="margin:0;">${escapeHtml(section.heading)}</h3>`;
+    if (section.startTime !== undefined && section.startTime !== null) {
+      html += `<button class="note-timestamp-btn" data-seek="${section.startTime}">⏱ ${this._formatSeconds(section.startTime)} - ${this._formatSeconds(section.endTime)}</button>`;
+    }
+    html += `</div>`;
+    html += `<p style="margin-top:12px; line-height:1.7; white-space:pre-wrap;">${escapeHtml(section.content)}</p>`;
+
+    // Real extracted video frame -- only rendered when the notes generator
+    // decided a specific visual genuinely helps this section (Section 11-14
+    // of the brief: never a random/forced image).
+    if (section.visualUrl) {
+      html += `
+        <figure class="note-visual-figure">
+          <img src="${section.visualUrl}" alt="${escapeHtml(section.visualCaption || 'Relevant visual from the video')}" loading="lazy">
+          <figcaption><strong>Related Visual:</strong> ${escapeHtml(section.visualCaption)}</figcaption>
+        </figure>`;
     }
 
-    if (notesBox && simplifiedData.study_notes) {
-      let notesHtml = '<h3>Structured Study Notes</h3>';
-      simplifiedData.study_notes.forEach(note => {
-        notesHtml += `
-          <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-primary); border-radius: var(--radius-sm);">
-            <h4 style="color: var(--primary); margin-bottom: 6px;">${note.heading}</h4>
-            <p>${note.content}</p>
-          </div>
-        `;
-      });
-      notesBox.innerHTML = notesHtml;
+    // Dynamic, video-grounded flowchart -- only rendered when this section
+    // actually describes a real process (never a generic/forced diagram).
+    if (section.flowchart) {
+      html += `
+        <div class="note-flowchart-box">
+          <h4>${escapeHtml(section.flowchart.title || 'Process Flowchart')}</h4>
+          <div class="note-mermaid-diagram mermaid">${section.flowchart.mermaid}</div>
+          <details>
+            <summary>Accessible text description of this flowchart (for screen readers)</summary>
+            <div class="note-flowchart-accessible-text">${escapeHtml(section.flowchart.accessibleText)}</div>
+          </details>
+        </div>`;
     }
+
+    html += `</div>`;
+    return html;
+  }
+
+  _formatSeconds(seconds) {
+    if (seconds === undefined || seconds === null || isNaN(seconds)) return '00:00';
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
   }
 
   renderSummary(summaryData) {
-    const summaryText = document.getElementById('summary-text-box');
-    const keywordsBox = document.getElementById('keywords-grid-box');
-
-    if (summaryText) {
-      summaryText.textContent = summaryData.short_summary || '';
-    }
-
-    if (keywordsBox && summaryData.keywords) {
-      let kwHtml = '';
-      summaryData.keywords.forEach(kw => {
-        kwHtml += `
-          <div style="padding: 14px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
-            <strong style="color: var(--primary); font-size: 1.05rem;">${kw.term}</strong>
-            <p style="margin-top: 4px; font-size: 0.95rem;">${kw.definition}</p>
-          </div>
-        `;
-      });
-      keywordsBox.innerHTML = kwHtml;
-    }
+    const shortBox = document.getElementById('summary-short-box');
+    const detailedBox = document.getElementById('summary-detailed-box');
+    if (shortBox) shortBox.textContent = summaryData.shortSummary || 'Summary not available.';
+    if (detailedBox) detailedBox.textContent = summaryData.detailedSummary || '';
   }
 
   renderKeyPoints(keyPointsList) {
@@ -461,6 +559,90 @@ class AccessLearnApp {
     });
     html += '</ul>';
     container.innerHTML = html;
+  }
+
+  setupAudioGeneration() {
+    const btn = document.getElementById('audio-generate-btn');
+    const statusEl = document.getElementById('audio-gen-status');
+    const downloadBtn = document.getElementById('audio-download-btn');
+    if (!btn) return;
+
+    btn.addEventListener('click', async () => {
+      if (!this.currentLectureId) return;
+      const source = document.getElementById('audio-source-select').value;
+      const lang = this.currentLanguage;
+      statusEl.textContent = 'Generating audio narration... this can take a moment.';
+      btn.disabled = true;
+      try {
+        const url = `/api/audio/${this.currentLectureId}?lang=${lang}&source=${source}`;
+        // HEAD-equivalent check via a real fetch so a real generation error
+        // (e.g. Gemini unavailable for the underlying content) surfaces here
+        // instead of failing silently inside the <audio> element.
+        const check = await fetch(url);
+        if (!check.ok) {
+          const err = await check.json().catch(() => ({}));
+          throw new Error(err.detail || `HTTP ${check.status}`);
+        }
+        this.audioPlayer.loadAudio(url);
+        if (downloadBtn) downloadBtn.onclick = () => { window.location.href = `${url}&download=true`; };
+        statusEl.textContent = `Ready: ${source.replace('_', ' ')} in ${lang.toUpperCase()}.`;
+        if (window.a11y) window.a11y.announceToScreenReader('Audio generated and ready to play.');
+      } catch (err) {
+        statusEl.textContent = `Error: ${err.message}`;
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  }
+
+  setupBrailleGeneration() {
+    const btn = document.getElementById('braille-generate-btn');
+    const statusInfo = document.getElementById('braille-stats-info');
+    const notice = document.getElementById('braille-limitation-notice');
+    const box = document.getElementById('braille-display-box');
+    const downloadBtn = document.getElementById('braille-download-btn');
+    if (!btn) return;
+
+    btn.addEventListener('click', async () => {
+      if (!this.currentLectureId) return;
+      const source = document.getElementById('braille-source-select').value;
+      const lang = this.currentLanguage;
+      notice.classList.add('hidden');
+      box.textContent = 'Generating Braille...';
+
+      try {
+        const url = `/api/braille/${this.currentLectureId}?lang=${lang}&source=${source}`;
+        const response = await fetch(url);
+        if (response.status === 422) {
+          const err = await response.json();
+          notice.textContent = err.detail;
+          notice.classList.remove('hidden');
+          box.textContent = '';
+          statusInfo.textContent = 'Braille not available for this language.';
+          return;
+        }
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err.detail || `HTTP ${response.status}`);
+        }
+        const text = await response.text();
+        box.textContent = text;
+        statusInfo.textContent = `Grade 1/2 English Braille | ${text.split('\n').length} lines | 40-cell format`;
+        if (downloadBtn) downloadBtn.onclick = () => { window.location.href = `${url}&download=true`; };
+        // Keep the legacy braille_viewer.js Copy button (still wired to its
+        // own addEventListener from page load) working against this newly
+        // generated text -- only one encoding is available from the on-
+        // demand endpoint now, so both its fields get the same value.
+        if (window.brailleViewer) {
+          window.brailleViewer.unicodeText = text;
+          window.brailleViewer.brfText = text;
+          window.brailleViewer.lectureId = this.currentLectureId;
+        }
+        if (window.a11y) window.a11y.announceToScreenReader('Braille generated.');
+      } catch (err) {
+        box.textContent = `Error generating Braille: ${err.message}`;
+      }
+    });
   }
 
   setupResultsTabs() {

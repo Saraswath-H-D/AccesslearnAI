@@ -4,6 +4,29 @@ from typing import Dict, Any, Tuple
 
 logger = logging.getLogger(__name__)
 
+
+class BrailleNotSupportedError(Exception):
+    """
+    Raised when Braille was requested for a language this service cannot
+    honestly produce correct output for.
+
+    WHY HINDI/KANNADA BRAILLE ISN'T IMPLEMENTED: the correct standard is
+    Bharati Braille, India's unified Braille code for Indic scripts.
+    Implementing it correctly needs a certified character-to-cell mapping
+    table. No such library exists on PyPI (checked directly: no
+    "bharati-braille", "indic-braille", or equivalent package). Hand-writing
+    that table from general knowledge was deliberately rejected --
+    Devanagari and Kannada each have 40+ consonants/vowels/matras with
+    precise published assignments and virama/conjunct rules; getting even a
+    few wrong would produce incorrect Braille that a blind reader has no way
+    to independently detect as wrong, unlike a wrong caption a sighted user
+    could compare against the video. So this raises a clear error instead of
+    guessing -- see tests for the explicit assertions on this behavior.
+    """
+
+
+LANGUAGE_NAMES = {"en": "English", "hi": "Hindi", "kn": "Kannada"}
+
 # Standard ASCII Braille to Unicode Braille pattern map
 ASCII_TO_UNICODE_BRAILLE = {
     ' ': '⠀', '!': '⠮', '"': '⠐', '#': '⠼', '$': '⠫', '%': '⠩', '&': '⠯', "'": '⠄',
@@ -50,11 +73,25 @@ class BrailleConverterService:
     Formatted specifically for 40-cell refreshable braille displays and embossers.
     """
 
-    def text_to_brf(self, text: str, grade: int = 2) -> Tuple[str, str]:
+    def text_to_brf(self, text: str, grade: int = 2, language: str = "en") -> Tuple[str, str]:
         """
         Converts text to (ASCII BRF format string, Unicode Braille visual string).
         Formats lines to a maximum of 40 characters per line.
+
+        Raises BrailleNotSupportedError for languages without a verified
+        Braille table -- see the class docstring above for why.
         """
+        if language != "en":
+            raise BrailleNotSupportedError(
+                f"Braille conversion for {LANGUAGE_NAMES.get(language, language)} requires a certified "
+                "Bharati Braille transliteration table, which is not available as a verified library in "
+                "this environment. To avoid producing incorrect Braille output -- which a blind reader "
+                "would have no way to independently detect as wrong -- this is intentionally not "
+                "generated. English Braille remains fully supported. For certified Bharati Braille "
+                "transcription, use dedicated assistive-technology tools such as those provided by "
+                "India's National Institute for the Visually Handicapped."
+            )
+
         if not text:
             text = "No content to convert."
             
