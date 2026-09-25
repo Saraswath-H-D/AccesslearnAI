@@ -1,9 +1,29 @@
 import os
+import re
 import logging
 import json
+from collections import Counter
 from typing import Dict, Any, List
 
 logger = logging.getLogger(__name__)
+
+_STOPWORDS = set("""
+a about above after again against all am an and any are aren't as at be because been
+before being below between both but by can't cannot could couldn't did didn't do does
+doesn't doing don't down during each few for from further had hadn't has hasn't have
+haven't having he he'd he'll he's her here here's hers herself him himself his how
+how's i i'd i'll i'm i've if in into is isn't it it's its itself let's me more most
+mustn't my myself no nor not of off on once only or other ought our ours ourselves
+out over own same shan't she she'd she'll she's should shouldn't so some such than
+that that's the their theirs them themselves then there there's these they they'd
+they'll they're they've this those through to too under until up very was wasn't we
+we'd we'll we're we've were weren't what what's when when's where where's which
+while who who's whom why why's with won't would wouldn't you you'd you'll you're
+you've your yours yourself yourselves also going okay yeah um uh like just really
+going now know one two three basically actually right thing things lot lots kind
+sort well see said say gonna wanna will shall may might must can cannot get got
+gets getting make made makes take takes taking let lets even still already
+""".split())
 
 class NLPProcessingService:
     """
@@ -77,85 +97,125 @@ class NLPProcessingService:
 
     def _generate_nlp_fallback(self, transcript_text: str, lecture_title: str) -> Dict[str, Any]:
         """
-        Generates clean, structured accessibility content for fallback/demo lectures.
+        Genuine, fully offline content analysis (no API key required): scores
+        each sentence of the real transcript by significant-word frequency
+        (a TextRank-style extractive summarization) and builds the
+        simplified/summary/keywords/study-notes structure from sentences that
+        actually appear in the lecture -- not a canned template.
         """
-        is_quantum = "quantum" in lecture_title.lower() or "qubit" in transcript_text.lower()
-        is_ml = "machine learning" in lecture_title.lower() or "neural" in transcript_text.lower()
-        
-        if is_quantum:
-            return {
-                "simplified_content": """
-• **What is a Qubit?**: Normal computer bits are like light switches—either ON (1) or OFF (0). A qubit is like a spinning coin—it can be heads and tails at the same time until it stops! This is called **Superposition**.
-• **What is Entanglement?**: Think of two magical dice. If you roll die A and get a 6, die B across the world instantly becomes a 6 too! They are connected instantly.
-• **Why does it matter?**: Supercomputers can test millions of possibilities at once instead of trying them one by one.
-                """.strip(),
-                "easy_explanation": "Quantum computing uses rules from microscopic physics to process information in ways standard laptops cannot. Instead of doing calculations step by step, quantum computers explore multiple paths at the same time to solve massive calculations quickly.",
-                "short_summary": "This lecture introduces the core principles of quantum computing. It explains how qubits utilize superposition and entanglement to perform complex algorithms faster than traditional computers.",
-                "key_points": [
-                    "Classical bits represent 0 or 1, whereas qubits exist in superposition.",
-                    "Entanglement creates an instantaneous link between paired qubits.",
-                    "Quantum algorithms like Shor's and Grover's offer exponential speedup.",
-                    "Quantum computing has major applications in cryptography and drug discovery."
-                ],
-                "keywords": [
-                    {"term": "Qubit", "definition": "The basic unit of quantum information, capable of representing 0, 1, or both simultaneously."},
-                    {"term": "Superposition", "definition": "A state where a quantum system exists in multiple states at the same time."},
-                    {"term": "Entanglement", "definition": "A phenomenon where quantum particles become inextricably linked regardless of distance."}
-                ],
-                "study_notes": [
-                    {"heading": "1. Classical vs. Quantum Bits", "content": "Classical computers use transistors (bits) locked in state 0 or 1. Quantum systems use subatomic particles with probabilistic states."},
-                    {"heading": "2. Quantum Speedup Applications", "content": "Useful for complex optimization, modeling molecular structures for medicine, and advanced encryption systems."}
-                ]
-            }
-        elif is_ml:
-            return {
-                "simplified_content": """
-• **What is a Neural Network?**: Computer algorithms designed like human brain cells (neurons) that learn from past practice instead of following rigid rules.
-• **Input, Hidden & Output Layers**: Information enters through input layers, gets weighted and analyzed in hidden layers, and produces a final decision in output layers.
-• **How it learns**: The computer guesses, sees how wrong it was (calculates error), and adjusts its math weights backwards (Backpropagation) until it gets smart!
-                """.strip(),
-                "easy_explanation": "Machine learning enables computers to learn patterns from data automatically. Instead of writing code for every specific situation, programmers train algorithms with thousands of examples so the software can recognize patterns independently.",
-                "short_summary": "This lecture covers the fundamental concepts of Artificial Neural Networks and Deep Learning. It outlines network architectures, backpropagation, and real-world AI applications.",
-                "key_points": [
-                    "Neural networks consist of interconnected input, hidden, and output node layers.",
-                    "Weights and biases dictate how signals travel between nodes.",
-                    "Backpropagation adjusts internal weights based on prediction error margins.",
-                    "Transformers and CNNs represent state-of-the-art vision and language models."
-                ],
-                "keywords": [
-                    {"term": "Neural Network", "definition": "A computational model inspired by biological nervous systems to recognize patterns in data."},
-                    {"term": "Backpropagation", "definition": "The training process of calculating errors and adjusting neural network weights backward."},
-                    {"term": "Gradient Descent", "definition": "An optimization algorithm used to minimize errors during neural network training."}
-                ],
-                "study_notes": [
-                    {"heading": "1. Neural Network Topology", "content": "Structured in layers. Nodes multiply input values by learnable weights and pass them through activation functions."},
-                    {"heading": "2. Modern Deep Learning", "content": "Scales neural networks with deep hidden layers, enabling automated feature extraction for image recognition and natural language processing."}
-                ]
-            }
+        sentences = self._split_sentences(transcript_text)
+        if not sentences:
+            sentences = [f"No substantial speech content was detected for \"{lecture_title}\"."]
+
+        scores, freq = self._score_sentences(sentences)
+        ranked_idx = sorted(range(len(sentences)), key=lambda i: scores[i], reverse=True)
+
+        # Spoken lectures repeat phrases while teaching ("we get the value...
+        # we get the value..."), so picking pure top-N by score alone tends
+        # to select several near-duplicate sentences. Skip a candidate that
+        # overlaps too heavily with one already chosen.
+        summary_n = max(2, min(4, len(sentences) // 8 or 2))
+        summary_idx = self._select_diverse(ranked_idx, sentences, summary_n)
+        short_summary = " ".join(sentences[i] for i in summary_idx)
+
+        points_n = max(3, min(6, len(sentences) // 5 or 3))
+        points_idx = self._select_diverse(ranked_idx, sentences, points_n)
+        key_points = [sentences[i] for i in points_idx]
+
+        top_terms = [w for w, _ in freq.most_common(30) if len(w) > 3]
+        keywords, seen = [], set()
+        for term in top_terms:
+            if term in seen:
+                continue
+            seen.add(term)
+            keywords.append({
+                "term": term.capitalize(),
+                "definition": f"A term emphasized repeatedly in this lecture on \"{lecture_title}\"."
+            })
+            if len(keywords) >= 5:
+                break
+        if not keywords:
+            keywords = [{"term": lecture_title, "definition": "The central subject of this lecture."}]
+
+        midpoint = len(sentences) // 2
+        first_half_idx = self._select_diverse([i for i in ranked_idx if i < midpoint], sentences, 4)
+        second_half_idx = self._select_diverse([i for i in ranked_idx if i >= midpoint], sentences, 4)
+        study_notes = []
+        if first_half_idx:
+            study_notes.append({"heading": "1. Opening Concepts", "content": " ".join(sentences[i] for i in first_half_idx)})
+        if second_half_idx:
+            study_notes.append({"heading": "2. Further Discussion", "content": " ".join(sentences[i] for i in second_half_idx)})
+        if not study_notes:
+            study_notes.append({"heading": "1. Summary", "content": short_summary})
+
+        return {
+            "simplified_content": "\n".join(f"• {s}" for s in key_points),
+            "easy_explanation": f"This lecture, \"{lecture_title}\", covers the following in plain language: {short_summary}",
+            "short_summary": short_summary,
+            "key_points": key_points,
+            "keywords": keywords,
+            "study_notes": study_notes
+        }
+
+    @staticmethod
+    def _significant_words(sentence: str) -> set:
+        return {w for w in re.findall(r"[A-Za-z][A-Za-z'-]{2,}", sentence.lower()) if w not in _STOPWORDS}
+
+    @classmethod
+    def _select_diverse(cls, ranked_idx: List[int], sentences: List[str], n: int, overlap_threshold: float = 0.6) -> List[int]:
+        """
+        Walk sentence indices in ranked (best-first) order, skipping any
+        candidate whose significant words overlap too heavily with a
+        sentence already chosen -- avoids a summary made of near-duplicate
+        repeated phrases from spoken/disfluent lecture speech.
+        """
+        chosen, chosen_words = [], []
+        for i in ranked_idx:
+            words = cls._significant_words(sentences[i])
+            if words and any(
+                len(words & cw) / len(words | cw) > overlap_threshold
+                for cw in chosen_words
+            ):
+                continue
+            chosen.append(i)
+            chosen_words.append(words)
+            if len(chosen) >= n:
+                break
+        return sorted(chosen)
+
+    @staticmethod
+    def _split_sentences(text: str) -> List[str]:
+        text = re.sub(r"\s+", " ", text or "").strip()
+        if not text:
+            return []
+        parts = re.split(r"(?<=[.!?])\s+", text)
+        return [p.strip() for p in parts if len(p.strip()) > 15]
+
+    @staticmethod
+    def _score_sentences(sentences: List[str]):
+        words_per_sentence = []
+        freq: Counter = Counter()
+        for s in sentences:
+            words = [w for w in re.findall(r"[A-Za-z][A-Za-z'-]{2,}", s.lower()) if w not in _STOPWORDS]
+            words_per_sentence.append(words)
+            freq.update(words)
+
+        if freq:
+            max_freq = max(freq.values())
+            normalized = {w: c / max_freq for w, c in freq.items()}
         else:
-            return {
-                "simplified_content": f"""
-• **Core Subject**: {lecture_title}
-• **Main Theme**: Breaking down complex theoretical ideas into structured, accessible learning blocks.
-• **Key Concept**: Systematic problem-solving and structured methodology allow students to digest dense academic material easily.
-                """.strip(),
-                "easy_explanation": f"This lecture explores the fundamental principles behind {lecture_title}. It breaks down complex domain concepts into plain language explanations to help all learners build strong foundational knowledge.",
-                "short_summary": f"An educational overview of {lecture_title}, highlighting key theoretical frameworks, practical case studies, and core analytical techniques for effective study.",
-                "key_points": [
-                    f"Understanding foundational principles of {lecture_title}.",
-                    "Analyzing core concepts through step-by-step plain language examples.",
-                    "Connecting theoretical models with practical real-world applications.",
-                    "Reviewing essential vocabulary and study strategies."
-                ],
-                "keywords": [
-                    {"term": "Framework", "definition": "A supporting structure or set of ideas used to solve complex problems."},
-                    {"term": "Analysis", "definition": "The detailed examination of elements or structure of a topic."},
-                    {"term": "Synthesis", "definition": "Combining different ideas to form a coherent understanding."}
-                ],
-                "study_notes": [
-                    {"heading": "1. Main Academic Takeaways", "content": "Focus on core terminology, structural frameworks, and practical applications outlined in the lecture summary."},
-                    {"heading": "2. Review Guidance", "content": "Revisit key points and listen to the audio recap for reinforced retention."}
-                ]
-            }
+            normalized = {}
+
+        scores = []
+        lead_zone = max(1, len(sentences) // 6)
+        for i, words in enumerate(words_per_sentence):
+            if not words:
+                scores.append(0.0)
+                continue
+            score = sum(normalized.get(w, 0.0) for w in words) / len(words)
+            if i < lead_zone:
+                score *= 1.15
+            scores.append(score)
+        return scores, freq
 
 nlp_service = NLPProcessingService()

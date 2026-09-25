@@ -48,18 +48,6 @@ def _is_broker_available(redis_url: str, timeout: float = 0.3) -> bool:
     except Exception:
         return False
 
-def ensure_demo_lectures():
-    """Populates high quality demo lectures lazily when needed."""
-    demo_id_1 = "demo-quantum-101"
-    if demo_id_1 not in LECTURE_STORE:
-        create_lecture_record(demo_id_1, "Introduction to Quantum Computing", "quantum_lecture.mp3")
-        process_lecture_pipeline_core(demo_id_1, str(settings.UPLOAD_DIR / "demo1.mp3"), "Introduction to Quantum Computing")
-        
-    demo_id_2 = "demo-neural-net-201"
-    if demo_id_2 not in LECTURE_STORE:
-        create_lecture_record(demo_id_2, "Neural Networks & Deep Learning", "neural_lecture.mp4")
-        process_lecture_pipeline_core(demo_id_2, str(settings.UPLOAD_DIR / "demo2.mp4"), "Neural Networks & Deep Learning")
-
 @router.post("/upload")
 async def upload_lecture(
     file: UploadFile = File(...),
@@ -351,7 +339,6 @@ async def list_lectures():
     """
     Lists all processed and available recent lectures.
     """
-    ensure_demo_lectures()
     lectures = []
     for lid, rec in LECTURE_STORE.items():
         lectures.append({
@@ -412,6 +399,7 @@ async def delete_lecture(lecture_id: str):
             logger.warning(f"Could not delete image directory {image_dir}: {e}")
 
     del LECTURE_STORE[lecture_id]
+
     logger.info(f"Deleted lecture {lecture_id} and {len(removed_files)} associated file(s).")
 
     return {
@@ -420,22 +408,3 @@ async def delete_lecture(lecture_id: str):
         "lecture_id": lecture_id,
         "files_removed": len(removed_files)
     }
-
-@router.post("/demo/load/{demo_key}")
-async def load_demo_lecture(demo_key: str):
-    """
-    Instantly triggers demo lecture for immediate UI exploration.
-    """
-    ensure_demo_lectures()
-    if demo_key == "quantum":
-        demo_id = "demo-quantum-101"
-    else:
-        demo_id = "demo-neural-net-201"
-        
-    if demo_id in LECTURE_STORE:
-        return {
-            "success": True,
-            "lecture_id": demo_id,
-            "title": LECTURE_STORE[demo_id]["title"]
-        }
-    raise HTTPException(status_code=404, detail="Demo lecture unavailable.")

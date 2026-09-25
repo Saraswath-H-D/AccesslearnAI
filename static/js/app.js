@@ -18,7 +18,6 @@ class AccessLearnApp {
     this.setupFileUpload();
     this.setupYouTubeInput();
     this.setupResultsTabs();
-    this.setupDemoButtons();
     this.loadRecentLectures();
 
     // Default to Landing view
@@ -249,34 +248,6 @@ class AccessLearnApp {
         submitBtn.disabled = false;
         submitBtn.textContent = originalLabel;
       }
-    }
-  }
-
-  setupDemoButtons() {
-    const demoBtn1 = document.getElementById('btn-demo-quantum');
-    const demoBtn2 = document.getElementById('btn-demo-neural');
-
-    if (demoBtn1) {
-      demoBtn1.addEventListener('click', () => this.loadDemo('quantum'));
-    }
-    if (demoBtn2) {
-      demoBtn2.addEventListener('click', () => this.loadDemo('neural'));
-    }
-  }
-
-  async loadDemo(demoKey) {
-    try {
-      if (window.a11y) window.a11y.announceToScreenReader('Loading demo lecture...');
-      const response = await fetch(`/api/demo/load/${demoKey}`, { method: 'POST' });
-      const res = await response.json();
-      
-      if (response.ok && res.lecture_id) {
-        this.currentLectureId = res.lecture_id;
-        this.fetchAndDisplayResults(this.currentLectureId);
-        this.showView('results-view');
-      }
-    } catch (err) {
-      console.error('Demo loading failed:', err);
     }
   }
 
