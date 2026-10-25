@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: accesslearn-ai
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL_NAME
+        value: gemini-flash-lite-latest
+      - key: DEBUG
+        value: "false"
