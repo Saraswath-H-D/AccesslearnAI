@@ -15,9 +15,19 @@ STRICT GROUNDING RULES (violating these makes the notes useless and dishonest):
 
 STRUCTURE RULES:
 - Choose section headings that fit THIS video's actual content and flow. Do not force a fixed template (no generic "Introduction/Advantages/Disadvantages/Conclusion" unless the video actually has that shape).
-- Only include a flowchart for a section if that section's data has "hasProcess": true. Never invent a flowchart for a section without a real process.
 - Only reference a visual for a section if one of the provided AVAILABLE VISUALS genuinely helps explain that section's concept. Do not force a visual into every section.
 - Write in short, clear sentences a college student can follow. Simplify the LANGUAGE, never the technical KNOWLEDGE -- keep every important technical detail.
+
+DIAGRAM RULES (important -- diagrams make the notes genuinely easier to understand, so look actively for a reason to include one):
+- Include a simple diagram for a section whenever it would help a student visualize that section's content. This is NOT limited to step-by-step processes/algorithms -- also create one for:
+  * a comparison (e.g. two things contrasted -- use a flowchart with two labeled branches),
+  * a hierarchy or classification (e.g. "X contains A, B, C" -- use a flowchart with one node branching to several),
+  * a cause-and-effect or relationship chain (e.g. "A leads to B which causes C"),
+  * scale/structure relationships (e.g. "the universe contains galaxies, which contain stars, which contain planets").
+- Base every node/label strictly on what THIS section actually says -- never invent a relationship or fact not present in the content.
+- Keep each diagram simple: 3-6 nodes, short labels (2-4 words each), one clear diagram per section at most.
+- Use Mermaid `flowchart TD` syntax for all diagram types (arrows show the relationship direction, whatever it represents -- sequence, hierarchy, or cause/effect).
+- Skip the diagram only when a section is pure narrative, opinion, or reflection with no structure, comparison, or relationship that a diagram could usefully show (e.g. a closing philosophical remark). When in doubt and the section names 3+ related concepts, prefer including a simple diagram over skipping it.
 
 Return ONLY valid JSON (no markdown fences) with this exact structure:
 {
@@ -29,9 +39,9 @@ Return ONLY valid JSON (no markdown fences) with this exact structure:
       "startTime": <number, seconds, from the section's data>,
       "endTime": <number, seconds>,
       "flowchart": null OR {
-        "title": "short flowchart title",
-        "mermaid": "flowchart TD\\n  A[Step 1] --> B[Step 2]\\n  B --> C[Step 3]",
-        "accessibleText": "Step 1: ...\\nStep 2: ...\\nStep 3: ..."
+        "title": "short diagram title",
+        "mermaid": "flowchart TD\\n  A[Concept 1] --> B[Concept 2]\\n  B --> C[Concept 3]",
+        "accessibleText": "Plain-language description of what the diagram shows and how the parts relate, written so a screen reader user gets the same understanding as someone looking at it."
       },
       "visualTimestamp": null OR <number, seconds -- MUST exactly match one of the AVAILABLE VISUALS timestamps below, if and only if it genuinely helps this section>,
       "visualCaption": null OR "a short caption explaining what the visual shows and why it's relevant here"

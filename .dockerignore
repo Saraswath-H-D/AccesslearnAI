@@ -1,0 +1,11 @@
+.venv/
+.git/
+.hf_cache/
+__pycache__/
+**/__pycache__/
+*.pyc
+.env
+.test_lid
+server.log
+storage/uploads/*
+storage/outputs/*

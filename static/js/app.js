@@ -375,6 +375,8 @@ class AccessLearnApp {
       if (brailleNotice) brailleNotice.classList.add('hidden');
       const brailleBox = document.getElementById('braille-display-box');
       if (brailleBox) brailleBox.textContent = 'Choose content and click "Generate Braille".';
+      const brailleSourceBox = document.getElementById('braille-source-text-box');
+      if (brailleSourceBox) brailleSourceBox.textContent = 'Choose content and click "Generate Braille".';
 
       this.loadRecentLectures();
 
@@ -413,6 +415,11 @@ class AccessLearnApp {
       ]);
       const notes = notesResp.ok ? await notesResp.json() : {};
       const summaryData = summaryResp.ok ? await summaryResp.json() : {};
+
+      // Cached so the Braille tab can show the plain English text it's
+      // converting without a separate fetch.
+      this._lastNotesData = notes;
+      this._lastSummaryData = summaryData;
 
       this.renderSimplified(notes);
       this.renderSummary(summaryData.summary || {});
@@ -571,28 +578,55 @@ class AccessLearnApp {
       if (!this.currentLectureId) return;
       const source = document.getElementById('audio-source-select').value;
       const lang = this.currentLanguage;
-      statusEl.textContent = 'Generating audio narration... this can take a moment.';
+      const originalBtnText = btn.textContent;
+      statusEl.textContent = '⏳ Generating audio narration... gTTS synthesis can take 30-90 seconds for longer content, please wait.';
       btn.disabled = true;
+      btn.textContent = '⏳ Generating...';
       try {
         const url = `/api/audio/${this.currentLectureId}?lang=${lang}&source=${source}`;
-        // HEAD-equivalent check via a real fetch so a real generation error
-        // (e.g. Gemini unavailable for the underlying content) surfaces here
-        // instead of failing silently inside the <audio> element.
-        const check = await fetch(url);
-        if (!check.ok) {
-          const err = await check.json().catch(() => ({}));
-          throw new Error(err.detail || `HTTP ${check.status}`);
+        // Fetch once as a blob (not just a status check) -- previously this
+        // checked the URL with fetch() and then pointed the <audio> element
+        // at the SAME url, triggering a second full download. Using the
+        // blob directly here avoids that, and also avoids the audio element
+        // silently failing without a clear error message.
+        const response = await fetch(url);
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err.detail || `HTTP ${response.status}`);
         }
-        this.audioPlayer.loadAudio(url);
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        this.audioPlayer.loadAudio(blobUrl);
+        this.audioPlayer.play(); // "Generate & Play" should actually play, not just load
         if (downloadBtn) downloadBtn.onclick = () => { window.location.href = `${url}&download=true`; };
-        statusEl.textContent = `Ready: ${source.replace('_', ' ')} in ${lang.toUpperCase()}.`;
-        if (window.a11y) window.a11y.announceToScreenReader('Audio generated and ready to play.');
+        statusEl.textContent = `Playing: ${source.replace('_', ' ')} in ${lang.toUpperCase()}.`;
+        if (window.a11y) window.a11y.announceToScreenReader('Audio generated and playing.');
       } catch (err) {
-        statusEl.textContent = `Error: ${err.message}`;
+        statusEl.textContent = `Error generating audio: ${err.message}`;
       } finally {
         btn.disabled = false;
+        btn.textContent = originalBtnText;
       }
     });
+  }
+
+  _contentToPlainText(source) {
+    if (source === 'notes') {
+      const notes = this._lastNotesData;
+      if (!notes || !notes.sections) return null;
+      return notes.sections.map(s => `${s.heading}\n${s.content}`).join('\n\n');
+    }
+    if (source === 'summary') {
+      const summary = (this._lastSummaryData || {}).summary;
+      if (!summary) return null;
+      return `${summary.shortSummary || ''}\n\n${summary.detailedSummary || ''}`;
+    }
+    if (source === 'key_points') {
+      const keyPoints = (this._lastSummaryData || {}).key_points;
+      if (!keyPoints) return null;
+      return keyPoints.map((p, i) => `${i + 1}. ${p}`).join('\n');
+    }
+    return null;
   }
 
   setupBrailleGeneration() {
@@ -600,6 +634,7 @@ class AccessLearnApp {
     const statusInfo = document.getElementById('braille-stats-info');
     const notice = document.getElementById('braille-limitation-notice');
     const box = document.getElementById('braille-display-box');
+    const sourceTextBox = document.getElementById('braille-source-text-box');
     const downloadBtn = document.getElementById('braille-download-btn');
     if (!btn) return;
 
@@ -609,6 +644,14 @@ class AccessLearnApp {
       const lang = this.currentLanguage;
       notice.classList.add('hidden');
       box.textContent = 'Generating Braille...';
+
+      // Plain English text is already loaded client-side (same content the
+      // Simplified Notes / Summary / Key Points tabs show) -- no extra
+      // request needed to display it alongside the Braille code.
+      const plainText = this._contentToPlainText(source);
+      if (sourceTextBox) {
+        sourceTextBox.textContent = plainText || 'Content not loaded yet -- switch to that tab first, or try again.';
+      }
 
       try {
         const url = `/api/braille/${this.currentLectureId}?lang=${lang}&source=${source}`;

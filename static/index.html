@@ -419,8 +419,19 @@
 
         <div id="braille-limitation-notice" class="hidden" role="alert" style="background: var(--warning-bg, #fffbeb); border: 1px solid #f59e0b; color: #92400e; padding: 14px; border-radius: var(--radius-sm); margin-bottom: 12px;"></div>
 
-        <div id="braille-display-box" class="braille-container" aria-label="Braille content preview">
-          Loading Braille code...
+        <div class="braille-side-by-side">
+          <div>
+            <h3 style="margin-bottom: 8px; font-size: 1rem;">Plain English Text</h3>
+            <div id="braille-source-text-box" class="content-box-plain" aria-label="Plain English text being converted">
+              Choose content and click "Generate Braille".
+            </div>
+          </div>
+          <div>
+            <h3 style="margin-bottom: 8px; font-size: 1rem;">Braille Code (.BRF)</h3>
+            <div id="braille-display-box" class="braille-container" aria-label="Braille content preview">
+              Choose content and click "Generate Braille".
+            </div>
+          </div>
         </div>
       </div>
     </section>

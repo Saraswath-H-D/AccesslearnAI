@@ -69,6 +69,23 @@ class AccessibleAudioPlayer {
     }
   }
 
+  /**
+   * Unconditionally starts playback (unlike togglePlay(), which would
+   * instead PAUSE if a previous track left isPlaying=true -- e.g. right
+   * after loading a newly generated track). Falls back to a clear status
+   * message if the browser blocks autoplay rather than failing silently.
+   */
+  play() {
+    if (!this.audio) return;
+    this.audio.play().then(() => {
+      this.isPlaying = true;
+      if (this.playBtn) this.playBtn.innerHTML = '⏸ <span class="sr-only">Pause Audio</span>';
+      if (window.a11y) window.a11y.announceToScreenReader('Audio playing');
+    }).catch(err => {
+      console.warn('Audio autoplay was blocked, user can press Play:', err);
+    });
+  }
+
   togglePlay() {
     if (!this.audio) return;
     if (this.isPlaying) {
