@@ -39,6 +39,23 @@ class BrailleViewerComponent {
       });
     }
 
+    const downloadVisualBtn = document.getElementById('braille-download-visual-btn');
+    if (downloadVisualBtn) {
+      downloadVisualBtn.addEventListener('click', () => {
+        if (!this.unicodeText) return;
+        const blob = new Blob([this.unicodeText], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `AccessLearn_${this.lectureId || 'braille'}_dots.txt`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        if (window.a11y) window.a11y.announceToScreenReader('Downloading Braille dot pattern text file');
+      });
+    }
+
     const copyBtn = document.getElementById('braille-copy-btn');
     if (copyBtn) {
       copyBtn.addEventListener('click', () => {
