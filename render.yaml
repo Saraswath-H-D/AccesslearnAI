@@ -12,3 +12,7 @@ services:
         value: gemini-flash-lite-latest
       - key: DEBUG
         value: "false"
+      - key: YTDLP_COOKIES_FILE
+        value: /etc/secrets/cookies.txt
+    secretFiles:
+      - name: cookies.txt

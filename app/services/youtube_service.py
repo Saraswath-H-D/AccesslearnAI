@@ -1,9 +1,18 @@
+import os
 import re
 import logging
 from pathlib import Path
 from typing import Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
+
+# YouTube blocks/bot-checks requests from datacenter IPs (Render, AWS, etc.)
+# with "Sign in to confirm you're not a bot" even for public videos.
+# Pointing yt-dlp at a real cookies.txt (exported from a logged-in browser
+# session, see README) makes requests look like that authenticated browser
+# and gets past most of these checks. Optional: unset/missing just means
+# no cookies are sent, which is fine for environments YouTube doesn't flag.
+YTDLP_COOKIES_FILE = os.getenv("YTDLP_COOKIES_FILE", "").strip()
 
 # Matches standard watch links, shortened youtu.be links, /shorts/ and
 # /embed/ URLs, with or without scheme/www, and pulls out the 11-char
@@ -64,6 +73,12 @@ class YouTubeIngestService:
             "socket_timeout": 30,
             "retries": 3,
         }
+
+        if YTDLP_COOKIES_FILE:
+            if Path(YTDLP_COOKIES_FILE).exists():
+                ydl_opts["cookiefile"] = YTDLP_COOKIES_FILE
+            else:
+                logger.warning(f"YTDLP_COOKIES_FILE={YTDLP_COOKIES_FILE!r} is set but the file doesn't exist; continuing without cookies.")
 
         logger.info(f"Downloading YouTube audio for video_id={video_id}")
         try:
