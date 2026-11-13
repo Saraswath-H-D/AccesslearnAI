@@ -426,9 +426,11 @@ async def get_braille(
     source: str = Query("notes"),
 ):
     """
-    Returns/downloads a .brf Braille file of the selected content in the
-    selected language. Hindi/Kannada return a clear 422 instead of
-    generating incorrect Braille -- see braille_service.py.
+    Downloads a .brf Braille file of the selected content in the selected
+    language, or (when not downloading) returns both the ASCII BRF text and
+    a Unicode Braille dot-pattern visual preview as JSON. Hindi/Kannada
+    return a clear 422 instead of generating incorrect Braille -- see
+    braille_service.py.
     """
     if source not in _SOURCE_KEY:
         raise HTTPException(status_code=400, detail=f"Unknown source '{source}'.")
@@ -440,7 +442,7 @@ async def get_braille(
         content = _get_translated_content(lecture_id, source, lang)
         text = _content_to_plain_text(content, source)
         try:
-            brf_text, unicode_braille = braille_service.text_to_brf(text, grade=2, language=lang)
+            brf_text, _ = braille_service.text_to_brf(text, grade=2, language=lang)
         except BrailleNotSupportedError as e:
             raise HTTPException(status_code=422, detail=str(e))
         brf_path.parent.mkdir(parents=True, exist_ok=True)
@@ -452,7 +454,12 @@ async def get_braille(
             filename=f"AccessLearn_{lecture_id}_{source}_{lang}.brf",
             media_type="text/plain"
         )
-    return FileResponse(path=brf_path, media_type="text/plain")
+
+    brf_text = brf_path.read_text(encoding="ascii", errors="replace")
+    return {
+        "brf_text": brf_text,
+        "unicode_braille": braille_service.ascii_to_unicode(brf_text),
+    }
 
 @router.get("/lectures")
 async def list_lectures():

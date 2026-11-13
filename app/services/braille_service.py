@@ -107,7 +107,7 @@ class BrailleConverterService:
         brf_content = "\r\n".join(brf_formatted_lines)
         
         # Build visual Unicode braille display
-        unicode_braille = self._ascii_to_unicode(brf_content)
+        unicode_braille = self.ascii_to_unicode(brf_content)
         
         return brf_content, unicode_braille
 
@@ -167,7 +167,7 @@ class BrailleConverterService:
                 lines.append("")
         return lines if lines else [""]
 
-    def _ascii_to_unicode(self, ascii_text: str) -> str:
+    def ascii_to_unicode(self, ascii_text: str) -> str:
         unicode_chars = []
         for char in ascii_text:
             low_char = char.lower()

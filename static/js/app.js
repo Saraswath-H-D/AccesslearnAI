@@ -668,18 +668,16 @@ class AccessLearnApp {
           const err = await response.json().catch(() => ({}));
           throw new Error(err.detail || `HTTP ${response.status}`);
         }
-        const text = await response.text();
-        box.textContent = text;
-        statusInfo.textContent = `Grade 1/2 English Braille | ${text.split('\n').length} lines | 40-cell format`;
+        const data = await response.json();
         if (downloadBtn) downloadBtn.onclick = () => { window.location.href = `${url}&download=true`; };
-        // Keep the legacy braille_viewer.js Copy button (still wired to its
-        // own addEventListener from page load) working against this newly
-        // generated text -- only one encoding is available from the on-
-        // demand endpoint now, so both its fields get the same value.
+        // braille_viewer.js owns braille-display-box/braille-stats-info from
+        // here -- it renders the Unicode dot-pattern view by default (with a
+        // toggle to switch to ASCII BRF) using the real brf_text/
+        // unicode_braille pair the endpoint now returns.
         if (window.brailleViewer) {
-          window.brailleViewer.unicodeText = text;
-          window.brailleViewer.brfText = text;
-          window.brailleViewer.lectureId = this.currentLectureId;
+          window.brailleViewer.loadBrailleData(data, this.currentLectureId);
+        } else {
+          box.textContent = data.unicode_braille || data.brf_text;
         }
         if (window.a11y) window.a11y.announceToScreenReader('Braille generated.');
       } catch (err) {
